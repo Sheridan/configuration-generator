@@ -243,7 +243,7 @@ sub append_unconfigured_hosts
 
 sub load_services
 {
-  for my $line (`cat /etc/services | grep -v '#' | egrep '(tcp|udp)' | sort -u | awk '{ print \$1 "/" \$2}'`)
+  for my $line (`cat /etc/services | egrep -v '^#' | egrep '(tcp|udp)' | sort -u | awk '{ print \$1 "/" \$2}'`)
   {
     if($line =~ /.*\/.*\/.*/)
     {

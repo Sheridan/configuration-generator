@@ -1,7 +1,0 @@
-.*/?((bann?(ers?)?|ads?)(erver|src|land|image|(c|k)lic?k?)?|top|re(c|k|ck)lama)([0-9]*)?(\.|\/|\?).*$
-.*/ushki/.*.gif$
-.*/(fishkin|vipersig|pogoda|weather|rambler)/\.(gif|jpg|png)$
-.*/(cy|cycounter|counter|cnt|cl)(\?|\/|\.).*$
-.*shop_tovar.*$
-.*(240|468|88|120|140|240|600) ?(x|X|_|-)? ?(400|600?|31|120|180|300|900?).*$
-.*Redirect.aspx\?uid=[0-9]*.*$

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+CLIENT_IP=$1
+
+echo "ICQ(ACCEPT) locl:${CLIENT_IP} inet"

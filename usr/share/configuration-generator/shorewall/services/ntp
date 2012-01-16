@@ -1,0 +1,6 @@
+#!/bin/bash
+
+CLIENT_IP=$1
+
+echo "NTP(ACCEPT) locl:${CLIENT_IP} \$FW"
+echo "NTP(ACCEPT) locl:${CLIENT_IP} inet"

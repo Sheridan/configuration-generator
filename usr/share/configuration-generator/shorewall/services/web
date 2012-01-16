@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#SQUID_IP=192.168.1.1
+SQUID_PORT=3128
+SQUID_PORTS="80,488,591,5554,7627,8008,8080:8081,8090"
+CLIENT_IP=$1
+EXT_IP=$2
+
+for t in tcp udp
+do
+    echo "REDIRECT locl:${CLIENT_IP} ${SQUID_PORT} ${t} ${SQUID_PORTS} - !192.168.1.1,${EXT_IP},192.168.0.2,192.168.0.1"
+    echo "ACCEPT locl:${CLIENT_IP} inet ${t} https"
+done
+
+echo "HTTP(ACCEPT) locl:${CLIENT_IP} \$FW"
+echo "HTTPS(ACCEPT) locl:${CLIENT_IP} \$FW"

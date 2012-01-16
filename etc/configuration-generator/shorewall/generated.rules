@@ -1,0 +1,159 @@
+
+###   amd-gentoo   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/databases \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/gpsd \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/irc \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/jabber \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail-local \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/nexuiz \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/nexuiz-server \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/nfs \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/quake3 \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/quake3-server \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/radio \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ssh \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/svn \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/video \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/warsow \$amd_gentoo_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$amd_gentoo_ADDR \$external_ip4_ADDR
+
+###   amd-windows   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/counter-strike \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/game-chibiki \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/gpsd \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/jabber \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mass-effect-2 \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/rise-of-immortals \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/smb \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ssh \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/steam \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/svn \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/windows-live \$amd_windows_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/winupdate \$amd_windows_ADDR \$external_ip4_ADDR
+
+###   book   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/databases \$book_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/distcc \$book_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$book_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/irc \$book_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/nfs \$book_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$book_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ssh \$book_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/svn \$book_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$book_ADDR \$external_ip4_ADDR
+ACCEPT locl:$book_ADDR inet tcp 5269
+DNAT locl locl:$book_ADDR tcp 5222 - $external_ip4_ADDR
+DNAT inet locl:$book_ADDR tcp 5222
+DNAT locl locl:$book_ADDR tcp 5223 - $external_ip4_ADDR
+DNAT inet locl:$book_ADDR tcp 5223
+DNAT locl locl:$book_ADDR tcp 5280 - $external_ip4_ADDR
+DNAT inet locl:$book_ADDR tcp 5280
+
+###   eee-elena   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/distcc \$eee_elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$eee_elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/icq \$eee_elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/jabber \$eee_elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail \$eee_elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail-local \$eee_elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/nfs \$eee_elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$eee_elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ssh \$eee_elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$eee_elena_ADDR \$external_ip4_ADDR
+
+###   eee-sheridan   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/chatroulette \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/databases \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/distcc \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/gpsd \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/jabber \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail-local \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/nfs \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ssh \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/svn \$eee_sheridan_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$eee_sheridan_ADDR \$external_ip4_ADDR
+
+###   elena   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/counter-strike \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/icq \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/jabber \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail-local \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/smb \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/steam \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/video \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$elena_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/winupdate \$elena_ADDR \$external_ip4_ADDR
+
+###   guests   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$guests_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/icq \$guests_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/jabber \$guests_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$guests_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$guests_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/winupdate \$guests_ADDR \$external_ip4_ADDR
+
+###   media   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/databases \$media_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$media_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/nfs \$media_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$media_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/rtorrent-rpc \$media_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ssh \$media_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/svn \$media_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/video \$media_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$media_ADDR \$external_ip4_ADDR
+
+###   mrdrsash   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/android-market \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/databases \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/gpsd \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/jabber \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail-local \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/nfs \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ssh \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/svn \$mrdrsash_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$mrdrsash_ADDR \$external_ip4_ADDR
+
+###   storage   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/databases \$storage_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/distcc \$storage_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$storage_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/nfs \$storage_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$storage_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ssh \$storage_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/svn \$storage_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$storage_ADDR \$external_ip4_ADDR
+
+###   vpad   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/android-market \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/databases \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/gpsd \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/jabber \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail-local \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/nfs \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ntp \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/ssh \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/svn \$vpad_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$vpad_ADDR \$external_ip4_ADDR
+
+###   wifi   ###
+SHELL /usr/local/share/configuration-generator/shorewall/services/ftp \$wifi_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/mail \$wifi_ADDR \$external_ip4_ADDR
+SHELL /usr/local/share/configuration-generator/shorewall/services/web \$wifi_ADDR \$external_ip4_ADDR

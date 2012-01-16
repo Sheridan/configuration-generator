@@ -1,0 +1,9 @@
+#!/bin/bash
+
+CLIENT_IP=$1
+
+for t in tcp udp
+do
+  echo "ACCEPT locl:${CLIENT_IP} \$FW ${t} 4000"
+done
+

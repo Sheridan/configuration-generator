@@ -1,0 +1,81 @@
+
+### Hosts  ###
+acl acl_6 src 192.168.1.190-192.168.1.200
+acl acl_0 src 192.168.1.100
+acl acl_1 src 192.168.1.101
+acl acl_2 src 192.168.1.3
+acl acl_3 src 192.168.1.104
+acl acl_4 src 192.168.1.105
+acl acl_5 src 192.168.1.102
+acl acl_7 src 192.168.1.106
+acl acl_8 src 192.168.1.153
+acl acl_9 src 192.168.1.2
+acl acl_10 src 192.168.1.107
+acl acl_11 src 192.168.1.42
+
+### acl_12 # amd-gentoo [amd-gentoo] # url # allow ###
+acl acl_12 url_regex -i "/etc/configuration-generator/squid/content/amd-gentoo.url.allow"
+http_access allow acl_0 acl_12
+
+### acl_13 # amd-gentoo [amd-gentoo] # url # no_cache ###
+acl acl_13 url_regex -i "/etc/configuration-generator/squid/content/amd-gentoo.url.no_cache"
+no_cache deny acl_0 acl_13
+
+### acl_14 # amd-gentoo [amd-gentoo] # file_extentions # allow ###
+acl acl_14 urlpath_regex -i "/etc/configuration-generator/squid/content/amd-gentoo.file_extentions.allow"
+http_access allow acl_0 acl_14
+
+### acl_15 # amd-gentoo [amd-gentoo] # file_extentions # no_cache ###
+acl acl_15 urlpath_regex -i "/etc/configuration-generator/squid/content/amd-gentoo.file_extentions.no_cache"
+no_cache deny acl_0 acl_15
+
+### acl_16 # amd-windows [amd-windows] # url # allow ###
+acl acl_16 url_regex -i "/etc/configuration-generator/squid/content/amd-windows.url.allow"
+http_access allow acl_1 acl_16
+
+### acl_17 # amd-windows [amd-windows] # file_extentions # allow ###
+acl acl_17 urlpath_regex -i "/etc/configuration-generator/squid/content/amd-windows.file_extentions.allow"
+http_access allow acl_1 acl_17
+
+### acl_18 # amd-windows [amd-windows] # file_extentions # deny ###
+acl acl_18 urlpath_regex -i "/etc/configuration-generator/squid/content/amd-windows.file_extentions.deny"
+http_access deny acl_1 acl_18
+
+### acl_19 # amd-windows [amd-windows] # file_extentions # no_cache ###
+acl acl_19 urlpath_regex -i "/etc/configuration-generator/squid/content/amd-windows.file_extentions.no_cache"
+no_cache deny acl_1 acl_19
+
+### acl_20 # o_all_o [] # url # allow ###
+acl acl_20 url_regex -i "/etc/configuration-generator/squid/content/o_all_o.url.allow"
+http_access allow  acl_20
+
+### acl_21 # o_all_o [] # url # deny ###
+acl acl_21 url_regex -i "/etc/configuration-generator/squid/content/o_all_o.url.deny"
+http_access deny  acl_21
+
+### acl_22 # o_all_o [] # url # no_cache ###
+acl acl_22 url_regex -i "/etc/configuration-generator/squid/content/o_all_o.url.no_cache"
+no_cache deny  acl_22
+
+### acl_23 # o_all_o [] # url_path # allow ###
+acl acl_23 urlpath_regex -i "/etc/configuration-generator/squid/content/o_all_o.url_path.allow"
+http_access allow  acl_23
+
+### acl_24 # o_all_o [] # url_path # deny ###
+acl acl_24 urlpath_regex -i "/etc/configuration-generator/squid/content/o_all_o.url_path.deny"
+http_access deny  acl_24
+
+### acl_25 # o_all_o [] # url_path # no_cache ###
+acl acl_25 urlpath_regex -i "/etc/configuration-generator/squid/content/o_all_o.url_path.no_cache"
+no_cache deny  acl_25
+
+### acl_26 # o_all_o [] # tor_url ###
+acl acl_26 url_regex -i "/etc/configuration-generator/squid/content/o_all_o.tor_url"
+never_direct allow  acl_26
+always_direct deny  acl_26
+
+### acl_27 # o_all_o [] # tor_url_path ###
+acl acl_27 urlpath_regex -i "/etc/configuration-generator/squid/content/o_all_o.tor_url_path"
+never_direct allow  acl_27
+always_direct deny  acl_27
+always_direct allow all

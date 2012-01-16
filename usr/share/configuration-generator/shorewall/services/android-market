@@ -1,0 +1,6 @@
+#!/bin/bash
+
+CLIENT_IP=$1
+
+echo "ACCEPT locl:${CLIENT_IP} inet tcp 5228"
+echo "ACCEPT locl:${CLIENT_IP} inet udp 5228"

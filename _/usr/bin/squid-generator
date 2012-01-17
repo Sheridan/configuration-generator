@@ -1,0 +1,162 @@
+#!/usr/bin/perl -w
+
+use strict;
+use utf8;
+#use Data::Dumper;
+
+do '/etc/configuration-generator/squid.conf';
+do '/etc/configuration-generator/hosts.conf';
+our ($config, $paths, $hosts, $network, $domain);
+
+my $squid_hosts = {};
+my $acls = {'' => 0};
+
+sub squid_label_to_name
+{
+  my $inp = join('_', @_);
+  $inp =~ s/[- \.]/_/g;
+  return 'o_'.$inp.'_o';
+}
+
+sub squid_build_rules_content
+{
+  my ($file_name, $rule_type, $content) = @_[0..2];
+  #print Dumper $content;
+  my $content_fh;
+  open($content_fh, '>', $file_name);
+  
+  my $head = '';
+  if    ($rule_type eq 'url'     )        { $head = 'https?://'; }
+  elsif ($rule_type eq 'url_path')        { $head = ''; }
+  elsif ($rule_type eq 'file_extentions') { $head = '.*\.'; }
+  
+  my $foot = '';
+  if    ($rule_type eq 'url'     )        { $foot = '/.*$'; }
+  elsif ($rule_type eq 'url_path')        { $foot = '$'; }
+  elsif ($rule_type eq 'file_extentions') { $foot = '($|&.*)'; }
+  
+  for my $line (@{$content})
+  {
+    print { $content_fh } ($head.$line.$foot."\n");
+  }
+  close($content_fh);
+}
+
+sub squid_build_host_rules
+{
+  my ($acl_fh, $name, $label) = @_[0..2];
+  
+  my $host = 
+       exists($config->{$label}{'host'}) 
+        ? $config->{$label}{'host'} 
+        : (
+            exists($config->{$label}{'range'}) 
+             ? $config->{$label}{'range'} 
+             : ''
+          );
+  
+  for my $rule_type (qw/url url_path file_extentions/)
+  {
+    next if (not exists($config->{$label}{$rule_type}));
+    my $rule_keyword = $rule_type eq 'url' ? 'url_regex' : 'urlpath_regex';
+    for my $access_type (qw/allow deny no_cache/)
+    {
+      next if (not exists($config->{$label}{$rule_type}{$access_type}) or scalar(@{$config->{$label}{$rule_type}{$access_type}}) == 0);
+      my $name_of_rule = squid_acl_name(squid_label_to_name($label, $rule_type, $access_type));
+      my $content_file_name = sprintf("%s/%s.%s.%s", $paths->{'content_dir'}, $name, $rule_type, $access_type);
+      print { $acl_fh } sprintf("\n### %s # %s [%s] # %s # %s ###\n", 
+                                           $name_of_rule,
+                                           $name, 
+                                           $label, 
+                                           $rule_type, 
+                                           $access_type);
+      print { $acl_fh } sprintf('acl %s %s -i "%s"', 
+                                           $name_of_rule, 
+                                           $rule_keyword,
+                                           $content_file_name) . "\n";
+      print { $acl_fh } sprintf('%s %s %s %s', 
+                                           $access_type eq 'no_cache' ? 'no_cache' : 'http_access', 
+                                           $access_type eq 'no_cache' ? 'deny' : $access_type, 
+                                           $squid_hosts->{$host}{'host_acl_name'},
+                                           $name_of_rule) . "\n";
+      squid_build_rules_content($content_file_name, $rule_type, $config->{$label}{$rule_type}{$access_type});
+    }
+  }
+  
+  for my $tor_type (qw/tor_url tor_url_path/)
+  {
+    next if (not exists($config->{$label}{$tor_type}));
+    my $name_of_rule = squid_acl_name(squid_label_to_name($label, $tor_type));
+    my $content_file_name = sprintf("%s/%s.%s", $paths->{'content_dir'}, $name, $tor_type);
+    my $rule_keyword = $tor_type eq 'tor_url' ? 'url_regex' : 'urlpath_regex';
+    print { $acl_fh } sprintf("\n### %s # %s [%s] # %s ###\n", 
+                                           $name_of_rule,
+                                           $name, 
+                                           $label, 
+                                           $tor_type);
+    print { $acl_fh } sprintf('acl %s %s -i "%s"', 
+                                           $name_of_rule, 
+                                           $rule_keyword,
+                                           $content_file_name) . "\n";
+    print { $acl_fh } sprintf('never_direct allow %s %s', $squid_hosts->{$host}{'host_acl_name'}, $name_of_rule) . "\n";
+    print { $acl_fh } sprintf('always_direct deny %s %s', $squid_hosts->{$host}{'host_acl_name'}, $name_of_rule) . "\n";
+    squid_build_rules_content($content_file_name, $tor_type eq 'tor_url' ? 'url' : 'url_path', $config->{$label}{$tor_type});
+  }
+}
+
+sub build_all_hosts_rules
+{
+  my ($acl_fh) = $_[0];
+  foreach my $label (sort keys(%{$config}))
+  {
+    next if $label eq '';
+    if (exists($config->{$label}{'host'}))
+    {
+      $squid_hosts->{$config->{$label}{'host'}}{'host_acl_name'} = squid_acl_name(squid_label_to_name($config->{$label}{'host'}, '_pc'));
+      $squid_hosts->{$config->{$label}{'host'}}{'ip'} = $hosts->{$label}{'ip'};
+    }
+    elsif (exists($config->{$label}{'range'}))
+    {
+      $squid_hosts->{$config->{$label}{'range'}}{'host_acl_name'} = squid_acl_name(squid_label_to_name($config->{$label}{'range'}, '_range'));
+    }
+    
+  }
+  
+  print { $acl_fh } "\n### Hosts  ###\n";
+  foreach my $host (sort keys(%{$squid_hosts}))
+  {
+    print { $acl_fh } sprintf('acl %s src %s',
+                           $squid_hosts->{$host}{'host_acl_name'},
+                           exists($squid_hosts->{$host}{'ip'}) ? $squid_hosts->{$host}{'ip'} : $host) . "\n";
+  }
+  $squid_hosts->{''}{'host_acl_name'} = '';
+}
+
+sub squid_acl_name
+{
+  my $name = $_[0];
+  unless (exists($acls->{$name}))
+  {
+    $acls->{$name} = 'acl_'.$acls->{''};
+    $acls->{''} += 1;
+  }
+  return $acls->{$name};
+}
+
+sub squid_generate
+{
+  my $acl_fh;
+  open($acl_fh, '>', $paths->{'acl'});
+  build_all_hosts_rules($acl_fh);
+  foreach my $label (sort keys(%{$config}))
+  {
+    next if $label eq '';
+    squid_build_host_rules($acl_fh, $label, $label);
+  }
+  squid_build_host_rules($acl_fh, squid_label_to_name("all"), '');
+  print { $acl_fh } "always_direct allow all\n";
+  close($acl_fh);
+}
+
+
+squid_generate();

@@ -1,0 +1,40 @@
+
+###   _common_   ###
+_common_-eth0-in-total:COUNT - eth0 $_common__ADDR
+DONE _common_-eth0-in-total
+_common_-eth0-out-total:COUNT - $_common__ADDR eth0
+DONE _common_-eth0-out-total
+_common_-ppp0-in-total:COUNT - ppp0 $_common__ADDR
+DONE _common_-ppp0-in-total
+_common_-ppp0-out-total:COUNT - $_common__ADDR ppp0
+DONE _common_-ppp0-out-total
+
+###   pc-0   ###
+pc-0-eth0-in-total:COUNT - eth0 $pc_0_ADDR
+DONE pc-0-eth0-in-total
+pc-0-eth0-out-total:COUNT - $pc_0_ADDR eth0
+DONE pc-0-eth0-out-total
+pc-0-ppp0-in-total:COUNT - ppp0 $pc_0_ADDR
+DONE pc-0-ppp0-in-total
+pc-0-ppp0-out-total:COUNT - $pc_0_ADDR ppp0
+DONE pc-0-ppp0-out-total
+
+###   server-1c   ###
+server-1c-eth0-in-total:COUNT - eth0 $server_1c_ADDR
+DONE server-1c-eth0-in-total
+server-1c-eth0-out-total:COUNT - $server_1c_ADDR eth0
+DONE server-1c-eth0-out-total
+server-1c-ppp0-in-total:COUNT - ppp0 $server_1c_ADDR
+DONE server-1c-ppp0-in-total
+server-1c-ppp0-out-total:COUNT - $server_1c_ADDR ppp0
+DONE server-1c-ppp0-out-total
+
+###   server-dc-0   ###
+server-dc-0-eth0-in-total:COUNT - eth0 $server_dc_0_ADDR
+DONE server-dc-0-eth0-in-total
+server-dc-0-eth0-out-total:COUNT - $server_dc_0_ADDR eth0
+DONE server-dc-0-eth0-out-total
+server-dc-0-ppp0-in-total:COUNT - ppp0 $server_dc_0_ADDR
+DONE server-dc-0-ppp0-in-total
+server-dc-0-ppp0-out-total:COUNT - $server_dc_0_ADDR ppp0
+DONE server-dc-0-ppp0-out-total

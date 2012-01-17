@@ -1,0 +1,5 @@
+#!/bin/bash
+
+CLIENT_IP=$1
+
+echo "SMB(ACCEPT) locl:${CLIENT_IP} \$FW"

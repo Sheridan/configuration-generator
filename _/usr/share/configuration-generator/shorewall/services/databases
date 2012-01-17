@@ -1,0 +1,6 @@
+#!/bin/bash
+
+CLIENT_IP=$1
+
+echo "PostgreSQL(ACCEPT) locl:${CLIENT_IP} \$FW"
+echo "MySQL(ACCEPT) locl:${CLIENT_IP} \$FW"

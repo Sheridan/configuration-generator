@@ -1,0 +1,13 @@
+#!/bin/bash
+
+CLIENT_IP=$1
+
+
+address="http://dpmaster.deathmask.net/?game=nexuiz"
+ports="26000"
+#for p in $(wget "http://dpmaster.deathmask.net/?game=nexuiz" -q -O - | egrep -o ":[0-9]+" | sort -u | sed -e 's/://')
+#do
+#  ports="${ports},${p}"
+#done
+
+echo "ACCEPT locl:${CLIENT_IP} inet udp ${ports}"

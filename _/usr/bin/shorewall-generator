@@ -1,0 +1,140 @@
+#!/usr/bin/perl
+use lib "/usr/local/lib/configuration-generator";
+
+use strict;
+use warnings;
+use utf8;
+use ConfGenCommon;
+
+
+do '/etc/configuration-generator/hosts.conf';     our ($hosts, $network, $domain, $external_interface);
+do '/etc/configuration-generator/shorewall.conf'; our ($templates, $config, $output_to, $accounting_interfaces);
+
+sub shorewall_generate_params
+{
+  my $fh;
+  open($fh, '>', $output_to->{'params'});
+
+  print { $fh } sprintf("external_ip4_ADDR=%s\n", $network->{'external_ip'});
+
+  foreach my $host_name (sort keys(%{$hosts}))
+  {
+    put_label_to_file($fh, $host_name);
+    my $variable_name = str_to_bash_variable_name($host_name);
+    if(exists($config->{$host_name}))
+    {
+	if(exists($hosts->{$host_name}{'ip'}))
+	{
+	    print { $fh } sprintf("%s_ADDR=%s\n", $variable_name, $hosts->{$host_name}{'ip'});
+	}
+	elsif(exists($hosts->{$host_name}{'range'}))
+	{
+	    print { $fh } sprintf("%s_ADDR='%s'\n", $variable_name, $hosts->{$host_name}{'range'});
+	}
+    }
+  }
+  close($fh);
+}
+
+# --- rules ---
+
+sub build_services_rules
+{
+  my ($fh, $host_name, $variable_name) = @_[0..2];
+  return unless exists $config->{$host_name}{'services'};
+  foreach my $service (sort @{$config->{$host_name}{'services'}})
+  {
+    print { $fh } sprintf("SHELL /usr/local/share/configuration-generator/shorewall/services/%s \\\$%s_ADDR \\\$external_ip4_ADDR\n", $service, $variable_name);
+  }
+}
+
+sub build_ports_rules
+{
+  my ($fh, $host_name, $variable_name) = @_[0..2];
+  return unless exists $config->{$host_name}{'ports'};
+  foreach my $ptype (sort keys %{$config->{$host_name}{'ports'}})
+  {
+    foreach my $port (sort @{$config->{$host_name}{'ports'}{$ptype}})
+    {
+      my @pt;
+      if ( $ptype eq 'both' ) { @pt = ('tcp', 'udp' ); } else { @pt = ($ptype); }
+      foreach my $ptp (@pt)
+      {
+        print { $fh } sprintf("ACCEPT locl:\$%s_ADDR inet %s %s\n", $variable_name, $ptp, $port);
+      }
+    }
+  }
+}
+
+sub build_dnat_rules
+{
+  my ($fh, $host_name, $variable_name) = @_[0..2];
+  return unless exists $config->{$host_name}{'dnat'};
+  foreach my $ptype (sort keys %{$config->{$host_name}{'dnat'}})
+  {
+    foreach my $port (sort @{$config->{$host_name}{'dnat'}{$ptype}})
+    {
+      my @pt;
+      if ( $ptype eq 'both' ) { @pt = ('tcp', 'udp' ); } else { @pt = ($ptype); }
+      foreach my $ptp (@pt)
+      {
+        print { $fh } sprintf("DNAT locl locl:\$%s_ADDR %s %s - \$external_ip4_ADDR\n", $variable_name, $ptp, $port);
+        print { $fh } sprintf("DNAT inet locl:\$%s_ADDR %s %s\n", $variable_name, $ptp, $port);
+      }
+    }
+  }
+}
+
+sub shorewall_generate_rules
+{
+  my $fh;
+  open($fh, '>', $output_to->{'rules'});
+  foreach my $host_name (sort keys(%{$hosts}))
+  {
+    if(exists($config->{$host_name}))
+    {
+	put_label_to_file($fh, $host_name);
+	my $variable_name = str_to_bash_variable_name($host_name);
+	build_services_rules($fh, $host_name, $variable_name);
+	build_ports_rules   ($fh, $host_name, $variable_name);
+	build_dnat_rules    ($fh, $host_name, $variable_name);
+    }
+  }
+  close($fh);
+}
+
+# --- ---
+
+sub shorewall_generate_accounting
+{
+  my $fh;
+  open($fh, '>', $output_to->{'accounting'});
+  foreach my $host_name (sort keys(%{$config}))
+  {
+    if(exists($config->{$host_name}))
+    {
+	put_label_to_file($fh, $host_name);
+	my $variable_name = str_to_bash_variable_name($host_name);
+	foreach my $interface (sort @{$accounting_interfaces})
+	{
+	    print { $fh } sprintf("%s-%s-in-total:COUNT - %s \$%s_ADDR\nDONE %s-%s-in-total\n", $host_name, $interface, $interface, $variable_name, $host_name, $interface);
+	    print { $fh } sprintf("%s-%s-out-total:COUNT - \$%s_ADDR %s\nDONE %s-%s-out-total\n", $host_name, $interface, $variable_name, $interface, $host_name, $interface);
+	}
+    }
+  }
+  close($fh);    
+}
+
+sub shorewall_generate
+{
+  #use Data::Dumper;
+  #print Dumper($accounting_interfaces);
+  #print Dumper($templates);
+  #print Dumper($output_to);
+  #print Dumper($config);
+  shorewall_generate_params();
+  shorewall_generate_rules();
+  shorewall_generate_accounting();
+}
+
+shorewall_generate();

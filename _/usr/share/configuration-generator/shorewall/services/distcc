@@ -1,5 +1,0 @@
-#!/bin/bash
-
-CLIENT_IP=$1
-
-echo "Distcc(ACCEPT)  locl:${CLIENT_IP} \$FW"

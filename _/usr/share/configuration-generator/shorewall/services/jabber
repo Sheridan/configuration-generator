@@ -1,6 +1,0 @@
-#!/bin/bash
-
-CLIENT_IP=$1
-
-echo "JabberSecure(ACCEPT) locl:${CLIENT_IP} inet"
-echo "JabberPlain(ACCEPT)  locl:${CLIENT_IP} inet"

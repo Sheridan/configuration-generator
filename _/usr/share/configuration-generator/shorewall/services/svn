@@ -1,9 +1,0 @@
-#!/bin/bash
-
-CLIENT_IP=$1
-
-echo "SVN(ACCEPT) locl:${CLIENT_IP} inet"
-echo "SVN(ACCEPT) locl:${CLIENT_IP} \$FW"
-
-echo "Git(ACCEPT) locl:${CLIENT_IP} inet"
-echo "Git(ACCEPT) locl:${CLIENT_IP} \$FW"

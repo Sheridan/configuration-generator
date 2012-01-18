@@ -1,44 +1,44 @@
 #!/usr/bin/perl
+use lib "/usr/local/lib/configuration-generator";
 
 use strict;
+use warnings;
 use utf8;
+use ConfGenCommon;
 
-do '/etc/configuration-generator/shorewall.conf';
 
-our ($config, $files, $accounting_interfaces, $external_interface);
-my $services_path="../share/configuration-generator/shorewall/services/";
+do '/etc/configuration-generator/hosts.conf';     our ($hosts, $ranges, $network, $domain, $external_interface);
+do '/etc/configuration-generator/shorewall.conf'; our ($templates, $hosts_config, $ranges_config, $output_to, $accounting_interfaces);
 
-sub str_to_bash_variable_name
-{
-  my $inp = $_[0];
-  $inp =~ s/-/_/g;
-  return $inp;
-}
-
-sub put_label_to_file
-{
-  my ($fh, $label) = @_[0..1];
-  print { $fh } sprintf ("\n###   %s   ###\n", $label);
-}
+$hosts_config = apply_template($hosts_config, $templates);
+$ranges_config = apply_template($ranges_config, $templates);
 
 sub shorewall_generate_params
 {
   my $fh;
-  open($fh, '>', $files->{'params'});
-  
-  print { $fh } sprintf("external_ip4_ADDR=\$(ifconfig %s | grep inet | sed -e 's/:/ /ig' | awk '{print \$3}')\n", $external_interface);
-  
-  foreach my $name (sort keys(%{$config}))
+  open($fh, '>', $output_to->{'params'});
+
+  print { $fh } sprintf("external_ip4_ADDR=%s\n", $network->{'external_ip'});
+
+  put_label_to_file($fh, 'Hosts');
+  for my $host_name (sort keys(%{$hosts}))
   {
-    put_label_to_file($fh, $name);
-    my $variable_name = str_to_bash_variable_name($name);
-    if(exists($config->{$name}{'host'}))
+    if(exists($hosts_config->{$host_name}))
     {
-      print { $fh } sprintf("%s_ADDR=\$(resolveip -s %s)\n", $variable_name, $config->{$name}{'host'});
+	put_label_to_file($fh, $host_name);
+	my $variable_name = str_to_bash_variable_name($host_name);
+	print { $fh } sprintf("%s_HOST=%s\n", $variable_name, $hosts->{$host_name}{'ip'});
+	
     }
-    if(exists($config->{$name}{'range'}))
+  }
+  put_label_to_file($fh, 'Ranges');
+  for my $range_name (sort keys(%{$ranges}))
+  {
+    if (exists $ranges_config->{$range_name})
     {
-      print { $fh } sprintf("%s_ADDR='%s'\n", $variable_name, $config->{$name}{'range'});
+	put_label_to_file($fh, $range_name);
+	my $variable_name = str_to_bash_variable_name($range_name);
+	print { $fh } sprintf("%s_RANGE=%s\n", $variable_name, range_to_string($ranges->{$range_name}, '-', ','));
     }
   }
   close($fh);
@@ -46,66 +46,112 @@ sub shorewall_generate_params
 
 # --- rules ---
 
-sub build_services_rules
+sub build_host_services_rules
 {
-  my ($fh, $name, $variable_name) = @_[0..2];
-  return unless exists $config->{$name}{'services'};
-  foreach my $service (sort @{$config->{$name}{'services'}})
+  my ($fh, $host_name, $variable_name) = @_[0..2];
+  return unless exists $hosts_config->{$host_name}{'services'};
+  foreach my $service (sort @{$hosts_config->{$host_name}{'services'}})
   {
-    print { $fh } sprintf("SHELL %s/%s \\\$%s_ADDR \\\$external_ip4_ADDR\n", $files->{'services-dir'}, $service, $variable_name);
+    my $cmd = sprintf("/usr/local/share/configuration-generator/shorewall/services/%s \\\$%s_HOST '%s'\n", $service, $variable_name, $network->{'external_ip'});
+    put_command_result_to_file($fh, $service, $cmd);
+    #print { $fh } sprintf("SHELL /usr/local/share/configuration-generator/shorewall/services/%s \\\$%s_HOST \\\$external_ip4_ADDR\n", $service, $variable_name);
   }
 }
 
-sub build_ports_rules
+sub build_host_ports_rules
 {
-  my ($fh, $name, $variable_name) = @_[0..2];
-  return unless exists $config->{$name}{'ports'};
-  foreach my $ptype (sort keys %{$config->{$name}{'ports'}})
+  my ($fh, $host_name, $variable_name) = @_[0..2];
+  return unless exists $hosts_config->{$host_name}{'ports'};
+  foreach my $ptype (sort keys %{$hosts_config->{$host_name}{'ports'}})
   {
-    foreach my $port (sort @{$config->{$name}{'ports'}{$ptype}})
+    foreach my $port (sort @{$hosts_config->{$host_name}{'ports'}{$ptype}})
     {
       my @pt;
       if ( $ptype eq 'both' ) { @pt = ('tcp', 'udp' ); } else { @pt = ($ptype); }
       foreach my $ptp (@pt)
       {
-        print { $fh } sprintf("ACCEPT locl:\$%s_ADDR inet %s %s\n", $variable_name, $ptp, $port);
+        print { $fh } sprintf("ACCEPT locl:\$%s_HOST inet %s %s\n", $variable_name, $ptp, $port);
       }
     }
   }
 }
 
-sub build_dnat_rules
+sub build_host_dnat_rules
 {
-  my ($fh, $name, $variable_name) = @_[0..2];
-  return unless exists $config->{$name}{'dnat'};
-  foreach my $ptype (sort keys %{$config->{$name}{'dnat'}})
+  my ($fh, $host_name, $variable_name) = @_[0..2];
+  return unless exists $hosts_config->{$host_name}{'dnat'};
+  foreach my $ptype (sort keys %{$hosts_config->{$host_name}{'dnat'}})
   {
-    foreach my $port (sort @{$config->{$name}{'dnat'}{$ptype}})
+    foreach my $port (sort @{$hosts_config->{$host_name}{'dnat'}{$ptype}})
     {
       my @pt;
       if ( $ptype eq 'both' ) { @pt = ('tcp', 'udp' ); } else { @pt = ($ptype); }
       foreach my $ptp (@pt)
       {
-        print { $fh } sprintf("DNAT locl locl:\$%s_ADDR %s %s - \$external_ip4_ADDR\n", $variable_name, $ptp, $port);
-        print { $fh } sprintf("DNAT inet locl:\$%s_ADDR %s %s\n", $variable_name, $ptp, $port);
+        print { $fh } sprintf("DNAT locl locl:\$%s_HOST %s %s - \$external_ip4_ADDR\n", $variable_name, $ptp, $port);
+        print { $fh } sprintf("DNAT inet locl:\$%s_HOST %s %s\n", $variable_name, $ptp, $port);
       }
     }
   }
 }
+
+# ----------- ranges --------------------
+sub build_range_services_rules
+{
+  my ($fh, $range_name, $variable_name) = @_[0..2];
+  return unless exists $ranges_config->{$range_name}{'services'};
+  foreach my $service (sort @{$ranges_config->{$range_name}{'services'}})
+  {
+    my $cmd = sprintf("/usr/local/share/configuration-generator/shorewall/services/%s '$%s_RANGE' '%s'\n", $service, $variable_name, $network->{'external_ip'});
+    put_command_result_to_file($fh, $service, $cmd);
+    #print { $fh } sprintf("SHELL /usr/local/share/configuration-generator/shorewall/services/%s \\\$%s_RANGE \\\$external_ip4_ADDR\n", $service, $variable_name);
+  }
+}
+
+sub build_range_ports_rules
+{
+  my ($fh, $range_name, $variable_name) = @_[0..2];
+  return unless exists $ranges_config->{$range_name}{'ports'};
+  foreach my $ptype (sort keys %{$ranges_config->{$range_name}{'ports'}})
+  {
+    foreach my $port (sort @{$ranges_config->{$range_name}{'ports'}{$ptype}})
+    {
+      my @pt;
+      if ( $ptype eq 'both' ) { @pt = ('tcp', 'udp' ); } else { @pt = ($ptype); }
+      foreach my $ptp (@pt)
+      {
+        print { $fh } sprintf("ACCEPT locl:\$%s_RANGE inet %s %s\n", $variable_name, $ptp, $port);
+      }
+    }
+  }
+}
+
 
 sub shorewall_generate_rules
 {
   my $fh;
-  open($fh, '>', $files->{'rules'});
-  foreach my $name (sort keys(%{$config}))
+  open($fh, '>', $output_to->{'rules'});
+  put_label_to_file($fh, 'Hosts');
+  foreach my $host_name (sort keys(%{$hosts}))
   {
-    put_label_to_file($fh, $name);
-    my $variable_name = str_to_bash_variable_name($name);
-    build_services_rules($fh, $name, $variable_name);
-    build_ports_rules   ($fh, $name, $variable_name);
-    build_dnat_rules    ($fh, $name, $variable_name);
+    if(exists($hosts_config->{$host_name}))
+    {
+	put_label_to_file($fh, $host_name);
+	my $variable_name = str_to_bash_variable_name($host_name);
+	build_host_services_rules($fh, $host_name, $variable_name);
+	build_host_ports_rules   ($fh, $host_name, $variable_name);
+	build_host_dnat_rules    ($fh, $host_name, $variable_name);
+    }
   }
-  close($fh);    
+  put_label_to_file($fh, 'Ranges');
+  for my $range_name (sort keys(%{$ranges}))
+  {
+    put_label_to_file($fh, $range_name);
+    my $variable_name = str_to_bash_variable_name($range_name);
+    build_range_services_rules($fh, $range_name, $variable_name);
+    build_range_ports_rules   ($fh, $range_name, $variable_name);
+  }
+  close($fh);
 }
 
 # --- ---
@@ -113,15 +159,33 @@ sub shorewall_generate_rules
 sub shorewall_generate_accounting
 {
   my $fh;
-  open($fh, '>', $files->{'accounting'});
-  foreach my $name (sort keys(%{$config}))
+  open($fh, '>', $output_to->{'accounting'});
+  put_label_to_file($fh, 'Hosts');
+  foreach my $host_name (sort keys(%{$hosts_config}))
   {
-    put_label_to_file($fh, $name);
-    my $variable_name = str_to_bash_variable_name($name);
-    foreach my $interface (sort @{$accounting_interfaces})
+    if(exists($hosts_config->{$host_name}))
     {
-      print { $fh } sprintf("%s-%s-in-total:COUNT - %s \$%s_ADDR\nDONE %s-%s-in-total\n", $name, $interface, $interface, $variable_name, $name, $interface);
-      print { $fh } sprintf("%s-%s-out-total:COUNT - \$%s_ADDR %s\nDONE %s-%s-out-total\n", $name, $interface, $variable_name, $interface, $name, $interface);
+	put_label_to_file($fh, $host_name);
+	my $variable_name = str_to_bash_variable_name($host_name);
+	foreach my $interface (sort @{$accounting_interfaces})
+	{
+	    print { $fh } sprintf("%s-%s-in-total:COUNT - %s \$%s_HOST\nDONE %s-%s-in-total\n", $host_name, $interface, $interface, $variable_name, $host_name, $interface);
+	    print { $fh } sprintf("%s-%s-out-total:COUNT - \$%s_HOST %s\nDONE %s-%s-out-total\n", $host_name, $interface, $variable_name, $interface, $host_name, $interface);
+	}
+    }
+  }
+  put_label_to_file($fh, 'Ranges');
+  for my $range_name (sort keys(%{$ranges}))
+  {
+    if(exists($ranges_config->{$range_name}))
+    {
+	my $variable_name = str_to_bash_variable_name($range_name);
+	put_label_to_file($fh, $range_name);
+	foreach my $interface (sort @{$accounting_interfaces})
+	{
+	    print { $fh } sprintf("%s-%s-in-total:COUNT - %s \$%s_RANGE\nDONE %s-%s-in-total\n", $range_name, $interface, $interface, $variable_name, $range_name, $interface);
+	    print { $fh } sprintf("%s-%s-out-total:COUNT - \$%s_RANGE %s\nDONE %s-%s-out-total\n", $range_name, $interface, $variable_name, $interface, $range_name, $interface);
+	}
     }
   }
   close($fh);    
@@ -131,7 +195,9 @@ sub shorewall_generate
 {
   #use Data::Dumper;
   #print Dumper($accounting_interfaces);
-  #print Dumper($files);
+  #print Dumper($templates);
+  #print Dumper($output_to);
+  #print Dumper($hosts_config);
   shorewall_generate_params();
   shorewall_generate_rules();
   shorewall_generate_accounting();

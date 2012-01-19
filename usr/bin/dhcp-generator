@@ -1,0 +1,79 @@
+#!/usr/bin/perl
+use lib "/usr/local/lib/configuration-generator";
+
+use strict;
+use warnings;
+use utf8;
+use ConfGenCommon;
+
+
+do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges, $network, $external_interface);
+do '/etc/configuration-generator/dhcp.conf';  our ($config, $output_to);
+
+
+sub make_base
+{
+    my ($fh) = $_[0];
+    print {$fh} "authoritative;\nddns-update-style none;\nlog-facility local7;\n\n";
+    print {$fh} sprintf("subnet %s netmask %s\n{\n"          , $network->{'net'}, $network->{'mask'}{'long'});
+    print {$fh} sprintf("	option domain-name \"%s\";\n"       , $network->{'domain'});
+    print {$fh} sprintf("	option domain-name-servers %s.%s;\n", $network->{'dns'}, $network->{'domain'});
+    print {$fh} sprintf("	default-lease-time %s;\n"           , $config->{'timers'}{'default-lease'});
+    print {$fh} sprintf("	max-lease-time %s;\n"               , $config->{'timers'}{'max-lease'});
+    print {$fh} sprintf("	option subnet-mask %s;\n"           , $network->{'mask'}{'long'});
+    print {$fh} sprintf("	option broadcast-address %s;\n"     , $network->{'broadcast'});
+    print {$fh} sprintf("	option routers %s;\n"               , $network->{'router'});
+    
+    make_pools($fh);
+    
+    print {$fh} "}\n\n";
+}
+
+sub make_pools
+{
+    my ($fh) = $_[0];
+    #put_label_to_file($fh, 'Ranges');
+    for my $range_name (sort keys(%{$ranges}))
+    {
+	if (exists $ranges->{$range_name})
+        {
+	    for my $range (@{$ranges->{$range_name}})
+	    {
+		my ($addr_from, $addr_to) = @{$range};
+		print { $fh } sprintf("	pool { range %s %s; %s unknown-clients; } # %s\n", 
+					$addr_from,
+					$addr_to,
+					grep (/$range_name/, @{$config->{'dynamic-ranges'}}) ? 'allow' : 'deny',
+					$range_name);
+	    }
+	}
+    }
+                        
+}
+
+sub make_hosts
+{
+    my ($fh) = $_[0];
+    for my $host_name (keys %{$hosts})
+    {
+	print { $fh } sprintf("host %s { hardware ethernet %s; fixed-address %s; }\n", 
+				$host_name,
+				$hosts->{$host_name}{'mac'},
+				$hosts->{$host_name}{'ip'});
+    }
+}
+
+sub dhcp_generate
+{
+  #use Data::Dumper;
+  #print Dumper($config);
+    my $fh;
+    open($fh, '>', $output_to->{'config'});
+    make_base($fh);
+    make_hosts($fh);
+    close($fh);
+  
+
+}
+
+dhcp_generate();

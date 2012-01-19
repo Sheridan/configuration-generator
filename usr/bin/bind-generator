@@ -1,0 +1,109 @@
+#!/usr/bin/perl
+use lib "/usr/local/lib/configuration-generator";
+
+use strict;
+use warnings;
+use utf8;
+use ConfGenCommon;
+
+do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges, $network, $external_interface);
+do '/etc/configuration-generator/bind.conf';  our ($config, $output_to);
+
+# -----------------------------  zone ----------------------------------
+sub make_zone
+{
+    my ($fh) = $_[0];
+    print {$fh} "\$ORIGIN .\n";
+    print {$fh} sprintf("\$TTL %d\n", $config->{'timers'}{'ttl'});
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+    print {$fh} sprintf("%s IN SOA %s.%s. %s.%s. (\n\t%02d%d%d%d%d ; serial\n\t%s ; refresh\n\t%d ; rertry\n\t%d ; expire\n\t%d ; minimum\n)\n", 
+			$network->{'domain'},
+			$config->{'in-soa'}{0}, $network->{'domain'},
+			$config->{'in-soa'}{1}, $network->{'domain'},
+			$year%100, $yday, $hour, $min, $sec,
+			$config->{'timers'}{'refresh'},
+			$config->{'timers'}{'retry'},
+			$config->{'timers'}{'expire'},
+			$config->{'timers'}{'minimum'});
+    print {$fh} sprintf("NS %s.\nA %s\n", $network->{'dns'}, $network->{'router'});
+}
+
+sub make_zone_hosts
+{
+    my ($fh) = $_[0];
+    print {$fh} sprintf("\$ORIGIN %s.\n", $network->{'domain'});
+    for my $host_name (keys %{$hosts})
+    {
+	print { $fh } sprintf("%s A %s\n", $host_name, $hosts->{$host_name}{'ip'});
+	for my $cname (@{$hosts->{$host_name}{'cnames'}})
+	{
+	    print { $fh } sprintf("%s CNAME %s\n", $cname, $host_name);
+	}
+    }
+}
+
+# ----------------------------- reverse  zone ----------------------------------
+
+sub make_reverse_zone
+{
+    my ($fh, $arpa_addr) = @_[0..1];
+    
+    print {$fh} "\$ORIGIN .\n";
+    print {$fh} sprintf("\$TTL %d\n", $config->{'timers'}{'ttl'});
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+    print {$fh} sprintf("%s.in-addr.arpa IN SOA %s.%s. %s.%s. (\n\t%02d%d%d%d%d ; serial\n\t%s ; refresh\n\t%d ; rertry\n\t%d ; expire\n\t%d ; minimum\n)\n", 
+			$arpa_addr,
+			$config->{'in-soa'}{0}, $network->{'domain'},
+			$config->{'in-soa'}{1}, $network->{'domain'},
+			$year%100, $yday, $hour, $min, $sec,
+			$config->{'timers'}{'refresh'},
+			$config->{'timers'}{'retry'},
+			$config->{'timers'}{'expire'},
+			$config->{'timers'}{'minimum'});
+    print {$fh} sprintf("NS %s.%s.\n", $network->{'dns'}, $network->{'domain'});
+}
+
+sub make_reverse_zone_hosts
+{
+    my ($fh, $arpa_addr, $subnet_octets_count) = @_[0..2];
+    print {$fh} sprintf("\$ORIGIN %s.in-addr.arpa.\n", $arpa_addr);
+    for my $host_name (keys %{$hosts})
+    {
+	my @oct = split(/\./, $hosts->{$host_name}{'ip'});
+	my $oct_addr = join('.',reverse(splice(@oct,2,2)));
+	print { $fh } sprintf("%s PTR %s.%s.\n", $oct_addr, $host_name, $network->{'domain'});
+	for my $cname (@{$hosts->{$host_name}{'cnames'}})
+	{
+	    print { $fh } sprintf("%s PTR %s.%s.\n", $oct_addr, $cname, $network->{'domain'});
+	}
+    }
+}
+
+
+
+sub bind_generate
+{
+  #use Data::Dumper;
+  #print Dumper($config);
+    my $fh;
+    open($fh, '>', sprintf("%s/%s.zone", $output_to->{'zones'}, $network->{'domain'}));
+    make_zone($fh);
+    make_zone_hosts($fh);
+    close($fh);
+    
+    my @arpa = ();
+    my @net  = reverse(split(/\./,$network->{'net'}));
+    my @mask = split(/\./,$network->{'mask'}{'long'});
+    for (my $i = 0; $i < 4; $i++)
+    {
+	push(@arpa, $net[$i]) if $mask[$i] eq "0";
+    }
+    my $arpa_addr = join('.', @arpa);
+    open($fh, '>', sprintf("%s/%s.in-addr.arpa.zone", $output_to->{'zones'}, $arpa_addr));
+    make_reverse_zone($fh, $arpa_addr);
+    make_reverse_zone_hosts($fh, $arpa_addr, scalar @arpa);
+    close($fh);
+
+}
+
+bind_generate();

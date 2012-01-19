@@ -1,0 +1,8 @@
+#!/bin/bash
+
+dhcp-generator
+bind-generator
+shorewall-generator
+squid-generator
+
+

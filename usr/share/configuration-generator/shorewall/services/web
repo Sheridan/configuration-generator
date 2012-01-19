@@ -1,16 +1,20 @@
-#!/bin/bash
+#!/usr/bin/perl
 
-#SQUID_IP=192.168.1.1
-SQUID_PORT=3128
-SQUID_PORTS="80,488,591,5554,7627,8008,8080:8081,8090"
-CLIENT_IP=$1
-EXT_IP=$2
+do '/etc/configuration-generator/hosts.conf'; our ($network);
+do '/etc/configuration-generator/squid.conf'; our ($ruleconfig);
 
-for t in tcp udp
-do
-    echo "REDIRECT locl:${CLIENT_IP} ${SQUID_PORT} ${t} ${SQUID_PORTS} - !192.168.1.1,${EXT_IP},192.168.0.2,192.168.0.1"
-    echo "ACCEPT locl:${CLIENT_IP} inet ${t} https"
-done
+my ($client_ip, $external_ip)=@ARGV[0..1];
 
-echo "HTTP(ACCEPT) locl:${CLIENT_IP} \$FW"
-echo "HTTPS(ACCEPT) locl:${CLIENT_IP} \$FW"
+for my $t ('tcp', 'udp')
+{
+    printf ("REDIRECT locl:%s %d %s %s - !%s\n",
+	    $client_ip,
+	    $ruleconfig->{'squid-port'},
+	    $t,
+	    join(',', @{$ruleconfig->{'redirect-ports'}}),
+	    join(',', ($external_ip, $network->{'router'})));
+    printf ("ACCEPT locl:%s inet %s https\n", $client_ip, $t)
+}
+
+printf ("HTTP(ACCEPT) locl:%s \$FW\n", $client_ip);
+printf ("HTTPS(ACCEPT) locl:%s \$FW\n", $client_ip);

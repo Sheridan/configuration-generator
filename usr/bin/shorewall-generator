@@ -7,7 +7,7 @@ use utf8;
 use ConfGenCommon;
 
 
-do '/etc/configuration-generator/hosts.conf';     our ($hosts, $ranges, $network, $domain, $external_interface);
+do '/etc/configuration-generator/hosts.conf';     our ($hosts, $ranges, $network, $external_interface);
 do '/etc/configuration-generator/shorewall.conf'; our ($templates, $hosts_config, $ranges_config, $output_to, $accounting_interfaces);
 
 $hosts_config = apply_template($hosts_config, $templates);
@@ -25,7 +25,6 @@ sub shorewall_generate_params
   {
     if(exists($hosts_config->{$host_name}))
     {
-	put_label_to_file($fh, $host_name);
 	my $variable_name = str_to_bash_variable_name($host_name);
 	print { $fh } sprintf("%s_HOST=%s\n", $variable_name, $hosts->{$host_name}{'ip'});
 	
@@ -36,7 +35,6 @@ sub shorewall_generate_params
   {
     if (exists $ranges_config->{$range_name})
     {
-	put_label_to_file($fh, $range_name);
 	my $variable_name = str_to_bash_variable_name($range_name);
 	print { $fh } sprintf("%s_RANGE=%s\n", $variable_name, range_to_string($ranges->{$range_name}, '-', ','));
     }
@@ -102,7 +100,7 @@ sub build_range_services_rules
   return unless exists $ranges_config->{$range_name}{'services'};
   foreach my $service (sort @{$ranges_config->{$range_name}{'services'}})
   {
-    my $cmd = sprintf("/usr/local/share/configuration-generator/shorewall/services/%s '$%s_RANGE' '%s'\n", $service, $variable_name, $network->{'external_ip'});
+    my $cmd = sprintf("/usr/local/share/configuration-generator/shorewall/services/%s '\$%s_RANGE' '%s'\n", $service, $variable_name, $network->{'external_ip'});
     put_command_result_to_file($fh, $service, $cmd);
     #print { $fh } sprintf("SHELL /usr/local/share/configuration-generator/shorewall/services/%s \\\$%s_RANGE \\\$external_ip4_ADDR\n", $service, $variable_name);
   }

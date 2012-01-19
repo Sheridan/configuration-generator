@@ -8,7 +8,7 @@ use utf8;
 use ConfGenCommon;
 #use Data::Dumper;
 
-do '/etc/configuration-generator/hosts.conf'; our ($hosts, $network, $domain, $external_interface);
+do '/etc/configuration-generator/hosts.conf'; our ($hosts, $network, $external_interface);
 do '/etc/configuration-generator/squid.conf'; our ($config, $paths, $templates);
 
 $config = apply_template($config, $templates);

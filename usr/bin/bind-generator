@@ -25,7 +25,13 @@ sub make_zone
 			$config->{'timers'}{'retry'},
 			$config->{'timers'}{'expire'},
 			$config->{'timers'}{'minimum'});
-    print {$fh} sprintf("NS %s.\nA %s\n", $network->{'dns'}, $network->{'router'});
+    print {$fh} sprintf("\tNS %s.\n\tA %s\n", $network->{'dns'}, $network->{'router'});
+#    print {$fh} sprintf("_msdcs NS %s.\n", $network->{'dns'});
+#    print {$fh} sprintf("_sites NS %s.\n", $network->{'dns'});
+#    print {$fh} sprintf("_tcp NS %s.\n", $network->{'dns'});
+#    print {$fh} sprintf("_udp NS %s.\n", $network->{'dns'});
+#    print {$fh} sprintf("DomainDNSZones NS %s.\n", $network->{'dns'});
+#    print {$fh} sprintf("ForestDNSZones NS %s.\n", $network->{'dns'});
 }
 
 sub make_zone_hosts
@@ -38,6 +44,22 @@ sub make_zone_hosts
 	for my $cname (@{$hosts->{$host_name}{'cnames'}})
 	{
 	    print { $fh } sprintf("%s CNAME %s\n", $cname, $host_name);
+	}
+	if (exists($hosts->{$host_name}{'type'}))
+	{
+	    if ($hosts->{$host_name}{'type'} eq 'domain-controller')
+	    {
+#		print {$fh} "\$ORIGIN _msdcs.ord.local.\n";
+#		print {$fh} "\$ORIGIN dc._msdcs.ord.local.\n";
+#		print {$fh} "\$ORIGIN _tcp.dc._msdcs.ord.local.\n";
+		print { $fh } sprintf("_mscds NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
+		print { $fh } sprintf("_sites NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
+		print { $fh } sprintf("_tcp NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
+		print { $fh } sprintf("_udp NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
+		print { $fh } sprintf("DomainDNSZones NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
+		print { $fh } sprintf("ForestDNSZones NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
+#		print {$fh} sprintf("\$ORIGIN %s.\n", $network->{'domain'});
+	    }
 	}
     }
 }
@@ -60,7 +82,7 @@ sub make_reverse_zone
 			$config->{'timers'}{'retry'},
 			$config->{'timers'}{'expire'},
 			$config->{'timers'}{'minimum'});
-    print {$fh} sprintf("NS %s.%s.\n", $network->{'dns'}, $network->{'domain'});
+    print {$fh} sprintf("\tNS %s.\n", $network->{'dns'});
 }
 
 sub make_reverse_zone_hosts

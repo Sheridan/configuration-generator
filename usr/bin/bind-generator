@@ -26,12 +26,6 @@ sub make_zone
 			$config->{'timers'}{'expire'},
 			$config->{'timers'}{'minimum'});
     print {$fh} sprintf("\tNS %s.\n\tA %s\n", $network->{'dns'}, $network->{'router'});
-#    print {$fh} sprintf("_msdcs NS %s.\n", $network->{'dns'});
-#    print {$fh} sprintf("_sites NS %s.\n", $network->{'dns'});
-#    print {$fh} sprintf("_tcp NS %s.\n", $network->{'dns'});
-#    print {$fh} sprintf("_udp NS %s.\n", $network->{'dns'});
-#    print {$fh} sprintf("DomainDNSZones NS %s.\n", $network->{'dns'});
-#    print {$fh} sprintf("ForestDNSZones NS %s.\n", $network->{'dns'});
 }
 
 sub make_zone_hosts
@@ -49,16 +43,12 @@ sub make_zone_hosts
 	{
 	    if ($hosts->{$host_name}{'type'} eq 'domain-controller')
 	    {
-#		print {$fh} "\$ORIGIN _msdcs.ord.local.\n";
-#		print {$fh} "\$ORIGIN dc._msdcs.ord.local.\n";
-#		print {$fh} "\$ORIGIN _tcp.dc._msdcs.ord.local.\n";
 		print { $fh } sprintf("_mscds NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
 		print { $fh } sprintf("_sites NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
 		print { $fh } sprintf("_tcp NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
 		print { $fh } sprintf("_udp NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
 		print { $fh } sprintf("DomainDNSZones NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
 		print { $fh } sprintf("ForestDNSZones NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
-#		print {$fh} sprintf("\$ORIGIN %s.\n", $network->{'domain'});
 	    }
 	}
     }
@@ -101,14 +91,25 @@ sub make_reverse_zone_hosts
     }
 }
 
+# ----------------------------- zone description ----------------------------------
 
+sub make_zones_descrition
+{
+    my ($zf, $rzf, $arpa_addr) = @_[0..2];
+    my $fh;
+    open($fh, '>', sprintf("%s/%s.zones.include", $output_to->{'zones'}, $network->{'domain'}));
+    print  {$fh} sprintf("zone \"%s\" in { type master; file \"%s\"; notify yes; };\n", $network->{'domain'}, $zf);
+    print  {$fh} sprintf("zone \"%s.in-addr.arpa\" in { type master; file \"%s\"; notify yes; };\n", $arpa_addr, $rzf);
+    close($fh);
+}
 
 sub bind_generate
 {
   #use Data::Dumper;
   #print Dumper($config);
     my $fh;
-    open($fh, '>', sprintf("%s/%s.zone", $output_to->{'zones'}, $network->{'domain'}));
+    my $zf =  sprintf("%s/%s.zone", $output_to->{'zones'}, $network->{'domain'});
+    open($fh, '>', $zf);
     make_zone($fh);
     make_zone_hosts($fh);
     close($fh);
@@ -121,11 +122,12 @@ sub bind_generate
 	push(@arpa, $net[$i]) if $mask[$i] eq "0";
     }
     my $arpa_addr = join('.', @arpa);
-    open($fh, '>', sprintf("%s/%s.in-addr.arpa.zone", $output_to->{'zones'}, $arpa_addr));
+    my $rzf = sprintf("%s/%s.in-addr.arpa.zone", $output_to->{'zones'}, $arpa_addr);
+    open($fh, '>', $rzf);
     make_reverse_zone($fh, $arpa_addr);
     make_reverse_zone_hosts($fh, $arpa_addr, scalar @arpa);
     close($fh);
-
+    make_zones_descrition($zf, $rzf, $arpa_addr);
 }
 
 bind_generate();

@@ -2,3 +2,5 @@ configuration-generator
 =======================
 shorewall IPv4
 squid
+dhcpd
+named

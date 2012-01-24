@@ -1,8 +1,15 @@
 #!/bin/bash
 
+echo "DHCP..."
 dhcp-generator
+
+echo "Bind..."
 bind-generator
+
+echo "Shorewall..."
 shorewall-generator
+
+echo "Squid..."
 squid-generator
 
 

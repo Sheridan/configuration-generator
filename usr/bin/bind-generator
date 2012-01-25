@@ -13,11 +13,12 @@ do '/etc/configuration-generator/bind.conf';  our ($config, $output_to);
 sub make_zone
 {
     my ($fh) = $_[0];
-    print {$fh} "\$ORIGIN .\n";
+    #print {$fh} "\$ORIGIN .\n";
+    print {$fh} sprintf("\$ORIGIN %s.\n", $network->{'domain'});
     print {$fh} sprintf("\$TTL %d\n", $config->{'timers'}{'ttl'});
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    print {$fh} sprintf("%s IN SOA %s.%s. %s.%s. (\n\t%02d%d%d%d%d ; serial\n\t%s ; refresh\n\t%d ; rertry\n\t%d ; expire\n\t%d ; minimum\n)\n", 
-			$network->{'domain'},
+    print {$fh} sprintf("@ IN SOA %s.%s. %s.%s. (\n\t%02d%d%d%d%d ; serial\n\t%s ; refresh\n\t%d ; rertry\n\t%d ; expire\n\t%d ; minimum\n)\n", 
+			#$network->{'domain'},
 			$config->{'in-soa'}{0}, $network->{'domain'},
 			$config->{'in-soa'}{1}, $network->{'domain'},
 			$year%100, $yday, $hour, $min, $sec,
@@ -25,13 +26,14 @@ sub make_zone
 			$config->{'timers'}{'retry'},
 			$config->{'timers'}{'expire'},
 			$config->{'timers'}{'minimum'});
-    print {$fh} sprintf("\tNS %s.\n\tA %s\n", $network->{'dns'}, $network->{'router'});
+    print {$fh} sprintf("@ IN NS %s\n", $network->{'dns'});
+    print {$fh} sprintf("@ A %s\n", $network->{'router'});
 }
 
 sub make_zone_hosts
 {
     my ($fh) = $_[0];
-    print {$fh} sprintf("\$ORIGIN %s.\n", $network->{'domain'});
+    #print {$fh} sprintf("\$ORIGIN %s.\n", $network->{'domain'});
     for my $host_name (keys %{$hosts})
     {
 	print { $fh } sprintf("%s A %s\n", $host_name, $hosts->{$host_name}{'ip'});
@@ -49,6 +51,7 @@ sub make_zone_hosts
 		print { $fh } sprintf("_udp NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
 		print { $fh } sprintf("DomainDNSZones NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
 		print { $fh } sprintf("ForestDNSZones NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
+#		print { $fh } sprintf("%s. A %s\n", $network->{'domain'}, $hosts->{$host_name}{'ip'});
 	    }
 	}
     }

@@ -23,6 +23,7 @@ sub make_base
     print {$fh} sprintf("	option subnet-mask %s;\n"           , $network->{'mask'}{'long'});
     print {$fh} sprintf("	option broadcast-address %s;\n"     , $network->{'broadcast'});
     print {$fh} sprintf("	option routers %s;\n"               , $network->{'router'});
+#    print {$fh} sprintf("	option netbios-name-servers %s;\n"  , $network->{'router'});
     
     make_pools($fh);
     

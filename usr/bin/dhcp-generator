@@ -55,7 +55,7 @@ sub make_pools
 sub make_hosts
 {
     my ($fh) = $_[0];
-    for my $host_name (keys %{$hosts})
+    for my $host_name (sort keys %{$hosts})
     {
 	print { $fh } sprintf("host %s { hardware ethernet %s; fixed-address %s; }\n", 
 				$host_name,

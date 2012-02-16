@@ -34,7 +34,7 @@ sub make_zone_hosts
 {
     my ($fh) = $_[0];
     #print {$fh} sprintf("\$ORIGIN %s.\n", $network->{'domain'});
-    for my $host_name (keys %{$hosts})
+    for my $host_name (sort keys %{$hosts})
     {
 	print { $fh } sprintf("%s A %s\n", $host_name, $hosts->{$host_name}{'ip'});
 	for my $cname (@{$hosts->{$host_name}{'cnames'}})
@@ -82,7 +82,7 @@ sub make_reverse_zone_hosts
 {
     my ($fh, $arpa_addr, $subnet_octets_count) = @_[0..2];
     print {$fh} sprintf("\$ORIGIN %s.in-addr.arpa.\n", $arpa_addr);
-    for my $host_name (keys %{$hosts})
+    for my $host_name (sort keys %{$hosts})
     {
 	my @oct = split(/\./, $hosts->{$host_name}{'ip'});
 	my $oct_addr = join('.',reverse(splice(@oct,2,2)));

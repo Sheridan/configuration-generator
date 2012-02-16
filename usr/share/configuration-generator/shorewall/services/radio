@@ -2,7 +2,7 @@
 
 CLIENT_IP=$1
 
-ports="8000,8500"
+ports="8000:10000"
 
 echo "ACCEPT locl:${CLIENT_IP} inet udp ${ports}"
 echo "ACCEPT locl:${CLIENT_IP} inet tcp ${ports}"

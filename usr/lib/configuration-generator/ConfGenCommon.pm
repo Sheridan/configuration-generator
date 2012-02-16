@@ -5,7 +5,7 @@ use utf8;
 
 our $VERSION = '1.00';
 use base 'Exporter';
-our @EXPORT = qw(str_to_bash_variable_name put_label_to_file apply_template put_command_result_to_file range_to_string);
+our @EXPORT = qw(str_to_bash_variable_name put_label_to_file apply_template put_command_result_to_file range_to_string range_to_ip_list);
 
 sub str_to_bash_variable_name
 {
@@ -94,6 +94,41 @@ sub range_to_string
 	$str .= $ranges_delimiter if $i != 0;
     }
     return $str . "'";
+}
+
+sub range_to_ip_list_internal
+{
+  my ($ip_from, $ip_to, $start_octet) = @_[0..2];
+  my (@octets_from, @octets_to) = (split(/\./, $ip_from), split(/\./, $ip_to));
+  my $ip_list = ();
+  for (my $a = ($start_octet > 0 ? $octets_from[0] : 1); $a < ($start_octet > 0 ? $octets_from[0]+1 : 255); $a++)
+  {
+    for (my $b = ($start_octet > 1 ? $octets_from[1] : 1); $b < ($start_octet > 1 ? $octets_from[1]+1 : 255); $b++)
+    {
+      for (my $c = ($start_octet > 2 ? $octets_from[2] : 1); $c < ($start_octet > 2 ? $octets_from[2]+1 : 255); $c++)
+      {
+        for (my $d = ($start_octet > 3 ? $octets_from[3] : 1); $d < ($start_octet > 3 ? $octets_from[2]+1 : 255); $d++)
+        {
+          push (@{$ip_list}, sprintf("%d.%d.%d.%d", $a, $b, $c, $d ));
+        }
+      }
+    }
+  }
+  return $ip_list;
+}
+
+sub range_to_ip_list
+{
+  my ($ip_from, $ip_to) = @_[0..1];
+  my ($octets_from, $octets_to) = ([split(/\./, $ip_from)], [split(/\./, $ip_to)]);
+  for (my $i = 0; $i < 4; $i++)
+  {
+     if($octets_from->[$i] ne $octets_to->[$i])
+     {
+       return range_to_ip_list_internal($ip_from, $ip_to, $i);
+     }
+  }
+  return ();
 }
 
 1;

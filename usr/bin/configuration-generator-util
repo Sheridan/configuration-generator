@@ -1,0 +1,80 @@
+#!/usr/bin/perl
+use lib "/usr/local/lib/configuration-generator";
+
+use strict;
+use warnings;
+use utf8;
+use ConfGenCommon;
+
+
+
+do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges, $network);
+#do '/etc/configuration-generator/bind.conf';  our ($config, $output_to);
+
+
+sub show_hosts_status
+{
+  use Net::Ping;
+  my $ping = Net::Ping->new( "icmp", 0.005, 64 );
+  my $status = $_[0];
+  my @count = (0,0);
+  for my $host_name (sort keys %{$hosts})
+  {
+    my $ping_status = $ping->ping($hosts->{$host_name}{'ip'});
+    my $status_string = $ping_status == 1 ? 'online' : 'offline';
+    $count[$ping_status]++;
+    printf("Host %s (%s) is %s\n", $host_name, $hosts->{$host_name}{'ip'}, $status_string) if($status eq $status_string or $status eq 'status');
+  }
+  print "---------------------------\n";
+  printf("Online: %s\nOffline: %s\nTotal: %s\n", $count[1], $count[0], $count[1] + $count[0])
+}
+
+
+sub show_range_status
+{
+  use Net::Ping;
+  my $ping = Net::Ping->new( "icmp", 0.005, 64 );
+  my ($range_name, $status) = @_[0..1];
+  my @count = (0,0);
+  for my $range (@{$ranges->{$range_name}})
+  {
+    my ($addr_from, $addr_to) = @{$range};
+    for my $ip (@{range_to_ip_list($addr_from, $addr_to)})
+    {
+      my $ping_status = $ping->ping($ip);
+      my $status_string = $ping_status == 1 ? 'online' : 'offline';
+      $count[$ping_status]++;
+      printf("Host %s (%s) is %s\n", $ip, $ip, $status_string) if($status eq $status_string or $status eq 'status');
+    }
+  }
+  print "---------------------------\n";
+  printf("Online: %s\nOffline: %s\nTotal: %s\n", $count[1], $count[0], $count[1] + $count[0])
+}
+
+sub util
+{
+  my $command = $ARGV[0] || 'show';
+  if ($command eq 'show')
+  {
+    my $p1 = $ARGV[1] || 'hosts';
+    if ($p1 eq 'hosts')
+    {
+      my $p2 = $ARGV[2] || 'status';
+      if ($p2 eq 'online' or $p2 eq 'offline' or $p2 eq 'status')
+      {
+        show_hosts_status($p2);
+      }
+    }
+    elsif ($p1 eq 'range')
+    {
+      my $range = $ARGV[2];
+      my $p2 = $ARGV[3] || 'status';
+      if ($p2 eq 'online' or $p2 eq 'offline' or $p2 eq 'status')
+      {
+        show_range_status($range, $p2);
+      }
+    }
+  }
+}
+
+util();

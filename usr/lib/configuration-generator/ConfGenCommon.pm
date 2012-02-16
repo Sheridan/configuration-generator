@@ -98,16 +98,23 @@ sub range_to_string
 
 sub range_to_ip_list_internal
 {
-  my ($ip_from, $ip_to, $start_octet) = @_[0..2];
-  my (@octets_from, @octets_to) = (split(/\./, $ip_from), split(/\./, $ip_to));
+  my ($octets_from, $octets_to, $start_octet) = @_[0..2];
   my $ip_list = ();
-  for (my $a = ($start_octet > 0 ? $octets_from[0] : 1); $a < ($start_octet > 0 ? $octets_from[0]+1 : 255); $a++)
+  for (my $a  = ($start_octet >= 0 ? $octets_from->[0] : 1); 
+          $a <= ($start_octet >= 0 ? $octets_to->[0] : 254); 
+          $a++)
   {
-    for (my $b = ($start_octet > 1 ? $octets_from[1] : 1); $b < ($start_octet > 1 ? $octets_from[1]+1 : 255); $b++)
+    for (my $b  = ($start_octet >= 1 ? $octets_from->[1] : 1); 
+            $b <= ($start_octet >= 1 ? $octets_to->[1] : 254); 
+            $b++)
     {
-      for (my $c = ($start_octet > 2 ? $octets_from[2] : 1); $c < ($start_octet > 2 ? $octets_from[2]+1 : 255); $c++)
+      for (my $c  = ($start_octet >= 2 ? $octets_from->[2] : 1); 
+              $c <= ($start_octet >= 2 ? $octets_to->[2] : 254); 
+              $c++)
       {
-        for (my $d = ($start_octet > 3 ? $octets_from[3] : 1); $d < ($start_octet > 3 ? $octets_from[2]+1 : 255); $d++)
+        for (my $d  = ($start_octet >= 3 ? $octets_from->[3] : 1); 
+                $d <= ($start_octet >= 3 ? $octets_to->[3] : 254); 
+                $d++)
         {
           push (@{$ip_list}, sprintf("%d.%d.%d.%d", $a, $b, $c, $d ));
         }
@@ -125,10 +132,10 @@ sub range_to_ip_list
   {
      if($octets_from->[$i] ne $octets_to->[$i])
      {
-       return range_to_ip_list_internal($ip_from, $ip_to, $i);
+       return range_to_ip_list_internal($octets_from, $octets_to, $i);
      }
   }
-  return ();
+  return [];
 }
 
 1;

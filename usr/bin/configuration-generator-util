@@ -6,16 +6,30 @@ use warnings;
 use utf8;
 use ConfGenCommon;
 
-
+use Net::Ping;
+my $ping = Net::Ping->new( "icmp", 0.01, 64 );
 
 do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges, $network);
 #do '/etc/configuration-generator/bind.conf';  our ($config, $output_to);
 
+sub host_name_from_ip_from_conf
+{
+  my $ip = $_[0];
+  for my $host_name (sort keys %{$hosts})
+  {
+    return $host_name if ($hosts->{$host_name}{'ip'} eq $ip);
+  }
+  return $ip;
+}
+
+sub all_host_names_from_conf
+{
+  my $host_name = $_[0];
+  return join(', ', $host_name, @{$hosts->{$host_name}{'cnames'}});
+}
 
 sub show_hosts_status
 {
-  use Net::Ping;
-  my $ping = Net::Ping->new( "icmp", 0.005, 64 );
   my $status = $_[0];
   my @count = (0,0);
   for my $host_name (sort keys %{$hosts})
@@ -23,17 +37,29 @@ sub show_hosts_status
     my $ping_status = $ping->ping($hosts->{$host_name}{'ip'});
     my $status_string = $ping_status == 1 ? 'online' : 'offline';
     $count[$ping_status]++;
-    printf("Host %s (%s) is %s\n", $host_name, $hosts->{$host_name}{'ip'}, $status_string) if($status eq $status_string or $status eq 'status');
+    printf("Host %s (%s) is %s\n", 
+                  $host_name, 
+                  $hosts->{$host_name}{'ip'}, 
+                  $status_string) 
+           if($status eq $status_string or $status eq 'status');
   }
   print "---------------------------\n";
   printf("Online: %s\nOffline: %s\nTotal: %s\n", $count[1], $count[0], $count[1] + $count[0])
 }
 
+sub show_hosts_names
+{
+  for my $host_name (sort keys %{$hosts})
+  {
+    printf("ip: %s, name: %s, cnames: %s\n", 
+                  $hosts->{$host_name}{'ip'},
+                  $host_name, 
+                  join(', ', @{$hosts->{$host_name}{'cnames'}}));
+  }
+}
 
 sub show_range_status
 {
-  use Net::Ping;
-  my $ping = Net::Ping->new( "icmp", 0.005, 64 );
   my ($range_name, $status) = @_[0..1];
   my @count = (0,0);
   for my $range (@{$ranges->{$range_name}})
@@ -44,7 +70,11 @@ sub show_range_status
       my $ping_status = $ping->ping($ip);
       my $status_string = $ping_status == 1 ? 'online' : 'offline';
       $count[$ping_status]++;
-      printf("Host %s (%s) is %s\n", $ip, $ip, $status_string) if($status eq $status_string or $status eq 'status');
+      printf("Host %s (%s) is %s\n", 
+                    host_name_from_ip_from_conf($ip), 
+                    $ip, 
+                    $status_string) 
+             if ($status eq $status_string or $status eq 'status');
     }
   }
   print "---------------------------\n";
@@ -64,6 +94,10 @@ sub util
       {
         show_hosts_status($p2);
       }
+      elsif ($p2 eq 'names')
+      {
+        show_hosts_names();
+      }
     }
     elsif ($p1 eq 'range')
     {
@@ -74,6 +108,20 @@ sub util
         show_range_status($range, $p2);
       }
     }
+  }
+  elsif ($command eq 'help')
+  {
+    print <<_
+Hosts:
+  Hosts online statuses:
+    configuration-generator-util show hosts (status|online|offline)
+  Hosts names:
+    configuration-generator-util show hosts names
+
+Ranges:
+  Range hosts online status:
+    configuration-generator-util show range rangename (status|online|offline)
+_
   }
 }
 

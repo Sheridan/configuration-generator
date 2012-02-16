@@ -1,0 +1,9 @@
+#!/bin/bash
+
+CLIENT_IP=$1
+
+ports="7000:7004,7202,7224,7255,7399,7499"
+
+echo "ACCEPT locl:${CLIENT_IP} inet tcp ${ports}"
+echo "ACCEPT locl:${CLIENT_IP} inet udp ${ports}"
+  

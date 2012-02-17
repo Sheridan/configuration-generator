@@ -5,7 +5,7 @@ use utf8;
 
 our $VERSION = '1.00';
 use base 'Exporter';
-our @EXPORT = qw(str_to_bash_variable_name put_label_to_file apply_template put_command_result_to_file range_to_string range_to_ip_list);
+our @EXPORT = qw(str_to_bash_variable_name put_label_to_file apply_template put_command_result_to_file range_to_string range_to_ip_list ip_to_string);
 
 sub str_to_bash_variable_name
 {
@@ -76,7 +76,7 @@ sub apply_template
 sub put_command_result_to_file
 {
     my ($fh, $label, $cmd) = @_[0..2];
-    for my $line (`$cmd`)
+    for my $line (`$cmd 2>&1`)
     {
 	chomp $line;
 	print { $fh } sprintf("%s	### %s ###\n",$line, $label);
@@ -136,6 +136,12 @@ sub range_to_ip_list
      }
   }
   return [];
+}
+
+sub ip_to_string
+{
+  my $ip = $_[0];
+  return sprintf("% 3d.% 3d.% 3d.% 3d", split(/\./, $ip));
 }
 
 1;

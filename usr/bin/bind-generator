@@ -53,6 +53,10 @@ sub make_zone_hosts
 		print { $fh } sprintf("ForestDNSZones NS %s\n", $network->{'dns'}); #$hosts->{$host_name}{'ip'});
 #		print { $fh } sprintf("%s. A %s\n", $network->{'domain'}, $hosts->{$host_name}{'ip'});
 	    }
+	    if ($hosts->{$host_name}{'type'} eq 'nameserver')
+	    {
+	      print { $fh } sprintf("%s A %s\n", $network->{'dns'}, $hosts->{$host_name}{'ip'});
+	    }
 	}
     }
 }
@@ -90,6 +94,13 @@ sub make_reverse_zone_hosts
 	for my $cname (@{$hosts->{$host_name}{'cnames'}})
 	{
 	    print { $fh } sprintf("%s PTR %s.%s.\n", $oct_addr, $cname, $network->{'domain'});
+	}
+	if (exists($hosts->{$host_name}{'type'}))
+	{
+	  if ($hosts->{$host_name}{'type'} eq 'nameserver')
+	  {
+	    print { $fh } sprintf("%s PTR %s.%s.\n", $oct_addr, $network->{'dns'}, $network->{'domain'});
+	  }
 	}
     }
 }

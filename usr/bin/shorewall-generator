@@ -47,8 +47,8 @@ sub shorewall_generate_params
 sub build_host_services_rules
 {
   my ($fh, $host_name, $variable_name) = @_[0..2];
-  return unless exists $hosts_config->{$host_name}{'services'};
-  foreach my $service (sort @{$hosts_config->{$host_name}{'services'}})
+  return unless exists $hosts_config->{$host_name}{'script-rules'};
+  foreach my $service (sort @{$hosts_config->{$host_name}{'script-rules'}})
   {
     my $cmd = sprintf("/usr/local/share/configuration-generator/shorewall/services/%s \\\$%s_HOST '%s'\n", $service, $variable_name, $network->{'external_ip'});
     put_command_result_to_file($fh, $service, $cmd);
@@ -97,8 +97,8 @@ sub build_host_dnat_rules
 sub build_range_services_rules
 {
   my ($fh, $range_name, $variable_name) = @_[0..2];
-  return unless exists $ranges_config->{$range_name}{'services'};
-  foreach my $service (sort @{$ranges_config->{$range_name}{'services'}})
+  return unless exists $ranges_config->{$range_name}{'script-rules'};
+  foreach my $service (sort @{$ranges_config->{$range_name}{'script-rules'}})
   {
     my $cmd = sprintf("/usr/local/share/configuration-generator/shorewall/services/%s '\$%s_RANGE' '%s'\n", $service, $variable_name, $network->{'external_ip'});
     put_command_result_to_file($fh, $service, $cmd);
@@ -167,8 +167,8 @@ sub shorewall_generate_accounting
 	my $variable_name = str_to_bash_variable_name($host_name);
 	foreach my $interface (sort @{$accounting_interfaces})
 	{
-	    print { $fh } sprintf("%s-%s-in-total:COUNT - %s \$%s_HOST\nDONE %s-%s-in-total\n", $host_name, $interface, $interface, $variable_name, $host_name, $interface);
-	    print { $fh } sprintf("%s-%s-out-total:COUNT - \$%s_HOST %s\nDONE %s-%s-out-total\n", $host_name, $interface, $variable_name, $interface, $host_name, $interface);
+	    print { $fh } sprintf("%s-%s-in:COUNT - %s \$%s_HOST\nDONE %s-%s-in\n", $host_name, $interface, $interface, $variable_name, $host_name, $interface);
+	    print { $fh } sprintf("%s-%s-out:COUNT - \$%s_HOST %s\nDONE %s-%s-out\n", $host_name, $interface, $variable_name, $interface, $host_name, $interface);
 	}
     }
   }
@@ -181,8 +181,8 @@ sub shorewall_generate_accounting
 	put_label_to_file($fh, $range_name);
 	foreach my $interface (sort @{$accounting_interfaces})
 	{
-	    print { $fh } sprintf("%s-%s-in-total:COUNT - %s \$%s_RANGE\nDONE %s-%s-in-total\n", $range_name, $interface, $interface, $variable_name, $range_name, $interface);
-	    print { $fh } sprintf("%s-%s-out-total:COUNT - \$%s_RANGE %s\nDONE %s-%s-out-total\n", $range_name, $interface, $variable_name, $interface, $range_name, $interface);
+	    print { $fh } sprintf("%s-%s-in:COUNT - %s \$%s_RANGE\nDONE %s-%s-in\n", $range_name, $interface, $interface, $variable_name, $range_name, $interface);
+	    print { $fh } sprintf("%s-%s-out:COUNT - \$%s_RANGE %s\nDONE %s-%s-out\n", $range_name, $interface, $variable_name, $interface, $range_name, $interface);
 	}
     }
   }

@@ -38,7 +38,7 @@ sub shorewall_generate_params
     if (exists $ranges->{$range_name})
     {
 	my $variable_name = str_to_bash_variable_name($range_name);
-	print { $fh } sprintf("%s_RANGE=%s\n", $variable_name, range_to_string($ranges->{$range_name}, '-', ','));
+	print { $fh } sprintf("%s_RANGE=%s\n", $variable_name, range_to_string($ranges->{$range_name}, '-', ',', "'"));
     }
   }
   close($fh);

@@ -75,15 +75,15 @@ sub apply_template
 
 sub range_to_string
 {
-    my ($ranges, $addr_delimiter, $ranges_delimiter) = @_[0..2];
-    my $str = "'";
+    my ($ranges, $addr_delimiter, $ranges_delimiter, $string_border) = @_[0..3];
+    my $str = $string_border;
     for ( my $i = scalar(@{$ranges})-1; $i >= 0; $i-- )
     {
 	my ($r_from, $r_to) = @{$ranges->[$i]};
 	$str .= sprintf("%s%s%s", $r_from, $addr_delimiter, $r_to);
 	$str .= $ranges_delimiter if $i != 0;
     }
-    return $str . "'";
+    return $str . $string_border;
 }
 
 sub range_to_ip_list_internal

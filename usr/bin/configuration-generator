@@ -120,15 +120,13 @@ sub services_control
       for my $cmd (@{$config->{'restart'}{$service}})
       {
         printf("\tExecuting command %s\n", $cmd);
-        my $exec_cmd = sprintf("%s >> %s 2>&1", $cmd, $config->{'log'});
-        `$exec_cmd`;
+        system(sprintf("%s >> %s 2>&1", $cmd, $config->{'log'})) == 0 or die sprintf("Command [%s] filed, (%s)(%s)", $cmd, $?, $!);
       }
     }
     elsif ($command eq 'reconfigure')
     {
       printf("Reconfiguring %s\n", $service);
-      my $exec_cmd = sprintf("%s-generator", $service);
-      `$exec_cmd`;
+      system(sprintf("%s-generator", $service)) == 0 or die sprintf("Command [%s-generator] filed, (%s)(%s)", $service, $?, $!);
     }
   }
 }
@@ -174,6 +172,29 @@ sub verify
       }
     }
   }
+  
+  for my $filename (qw/shorewall squid/)
+  {
+    my $file = sprintf("/etc/configuration-generator/%s.conf", $filename);
+    do $file; our ($hosts_config, $ranges_config);
+    for my $host_name (sort keys %{$hosts_config})
+    {
+      if(not exists($hosts->{$host_name}))
+      {
+        $ok = 0;
+        printf("Config %s contains unknown host '%s'\n", $file, $host_name);
+      }
+    }
+    for my $range_name (sort keys %{$ranges_config})
+    {
+      if(not exists($ranges->{$range_name}))
+      {
+        $ok = 0;
+        printf("Config %s contains unknown range '%s'\n", $file, $range_name);
+      }
+    }
+  }
+  
   printf("Verification %s\n", $ok ? 'done' : 'failed');
   return $ok;
 }
@@ -235,26 +256,26 @@ sub util
     print <<_
 Hosts:
   Hosts online statuses:
-    configuration-generator-util show hosts (status|online|offline)
+    configuration-generator show hosts (status|online|offline)
   Hosts names:
-    configuration-generator-util show hosts names
+    configuration-generator show hosts names
 
 Ranges:
   Range hosts online status:
-    configuration-generator-util show range rangename (status|online|offline)
+    configuration-generator show range rangename (status|online|offline)
   Range hosts macs
-    configuration-generator-util show range rangename mac
+    configuration-generator show range rangename mac
 
 Services control:
   Reconfiguration:
-    configuration-generator-util services reconfigure
+    configuration-generator services reconfigure
   Restart:
-    configuration-generator-util services restart
+    configuration-generator services restart
   Reconfigure and restart
-    configuration-generator-util services refresh
+    configuration-generator services refresh
     
 Verification:
-  configuration-generator-util verify
+  configuration-generator verify
 _
   }
 }

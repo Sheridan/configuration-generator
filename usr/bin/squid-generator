@@ -8,10 +8,11 @@ use utf8;
 use ConfGenCommon;
 #use Data::Dumper;
 
-do '/etc/configuration-generator/hosts.conf'; our ($hosts, $network, $external_interface);
-do '/etc/configuration-generator/squid.conf'; our ($config, $common_config, $paths, $templates);
+do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges, $network, $external_interface);
+do '/etc/configuration-generator/squid.conf'; our ($hosts_config, $ranges_config, $common_config, $paths, $templates);
 
-$config = apply_template($config, $templates);
+$hosts_config = apply_template($hosts_config, $templates);
+$ranges_config = apply_template($ranges_config, $templates);
 
 my $acls = {'' => 0};
 
@@ -46,31 +47,22 @@ sub squid_build_rules_content
   close($content_fh);
 }
 
-sub squid_build_host_rules
-{
-  my ($acl_fh, $host) = @_[0..2];
-  write_rule($acl_fh, $host, $config->{$host}) if exists ($config->{$host});
-}
-
-sub build_all_hosts_rules
+sub build_src_rules
 {
   my ($acl_fh) = $_[0];
-  foreach my $host (sort keys(%{$hosts}))
-  {
-    next if (not exists($config->{$host}));
-#    elsif (exists($config->{$label}{'range'}))
-#    {
-#      $squid_hosts->{$config->{$label}{'range'}}{'host_acl_name'} = squid_acl_name(squid_label_to_name($config->{$label}{'range'}, '_range'));
-#    }
-    
-  }
-  
-  print { $acl_fh } "### Hosts  ###\n";
+  print { $acl_fh } "# --- Hosts --- \n";
   foreach my $host (sort keys(%{$hosts}))
   {
     print { $acl_fh } sprintf("acl %s src %s\n",
                            squid_acl_name($host),
                            $hosts->{$host}{'ip'});
+  }
+  print { $acl_fh } "# --- Ranges --- \n";
+  foreach my $range (sort keys(%{$ranges}))
+  {
+    print { $acl_fh } sprintf("acl %s src %s\n",
+                           squid_acl_name($range),
+                           range_to_string($ranges->{$range},'-', ' ', ''));
   }
 }
 
@@ -87,9 +79,9 @@ sub squid_acl_name
 
 sub write_rule
 {
-  my ($acl_fh, $label, $rules) = @_[0..2];
+  my ($acl_fh, $label, $rules, $class) = @_[0..3];
   
-  print { $acl_fh } sprintf("\n# ------ Rules %s begin ------\n", $label);
+  print { $acl_fh } sprintf("\n# ------ Rules %s -> %s begin ------\n", $class, $label);
   
   my $host_acl_name = exists($hosts->{$label}) ? squid_acl_name($label) : '';
   
@@ -101,7 +93,7 @@ sub write_rule
     {
       next if (not exists($rules->{$rule_type}{$access_type}) or scalar(@{$rules->{$rule_type}{$access_type}}) == 0);
       my $name_of_rule = squid_acl_name(squid_label_to_name($label, $rule_type, $access_type));
-      my $content_file_name = sprintf("%s/%s.%s.%s", $paths->{'content_dir'}, $label, $rule_type, $access_type);
+      my $content_file_name = sprintf("%s/%s.%s.%s.%s", $paths->{'content_dir'}, $class, $label, $rule_type, $access_type);
       print { $acl_fh } sprintf("# --- %s # %s # %s ---\n", 
                                            $name_of_rule,
                                            $rule_type, 
@@ -123,7 +115,7 @@ sub write_rule
   {
     next if (not exists($rules->{$tor_type}) or scalar(@{$rules->{$tor_type}} == 0));
     my $name_of_rule = squid_acl_name(squid_label_to_name($label, $tor_type));
-    my $content_file_name = sprintf("%s/%s.%s", $paths->{'content_dir'}, $label, $tor_type);
+    my $content_file_name = sprintf("%s/%s.%s.%s", $paths->{'content_dir'}, $class, $label, $tor_type);
     my $rule_keyword = $tor_type eq 'tor_url' ? 'url_regex' : 'urlpath_regex';
     print { $acl_fh } sprintf("# --- %s # %s ---\n", 
                                            $name_of_rule,
@@ -138,25 +130,23 @@ sub write_rule
     squid_build_rules_content($content_file_name, $tor_type eq 'tor_url' ? 'url' : 'url_path', $rules->{$tor_type});
   }
   
-  print { $acl_fh } sprintf("# ------ Rules %s end ------\n", $label);
-}
-
-sub build_common
-{
-  my ($acl_fh) = $_[0];
-  write_rule($acl_fh, "all.common.rules", $common_config);
+  print { $acl_fh } sprintf("# ------ Rules %s -> %s end ------\n", $class, $label);
 }
 
 sub squid_generate
 {
   my $acl_fh;
   open($acl_fh, '>', $paths->{'acl'});
-  build_all_hosts_rules($acl_fh);
+  build_src_rules($acl_fh);
   foreach my $host (sort keys(%{$hosts}))
   {
-    squid_build_host_rules($acl_fh, $host);
+    write_rule($acl_fh, $host, $hosts_config->{$host}, 'host') if exists ($hosts_config->{$host});
   }
-  build_common($acl_fh);
+  foreach my $range (sort keys(%{$ranges}))
+  {
+    write_rule($acl_fh, $range, $ranges_config->{$range}, 'range') if exists ($ranges_config->{$range});
+  }
+  write_rule($acl_fh, ".", $common_config, 'common');
   close($acl_fh);
 }
 

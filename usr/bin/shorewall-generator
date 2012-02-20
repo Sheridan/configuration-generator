@@ -121,7 +121,7 @@ sub build_range_services_rules
     {
       for my $port (sort @{$services->{$service}{$ptype}})
       {
-        print { $fh } sprintf("ACCEPT locl:\$%s_HOST inet %s %s	### service %s ###\n", $variable_name, $ptype, $port, $service);
+        print { $fh } sprintf("ACCEPT locl:\$%s_RANGE inet %s %s	### service %s ###\n", $variable_name, $ptype, $port, $service);
       }
     }
   }

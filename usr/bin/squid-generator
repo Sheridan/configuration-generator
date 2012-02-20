@@ -83,7 +83,7 @@ sub write_rule
   
   print { $acl_fh } sprintf("\n# ------ Rules %s -> %s begin ------\n", $class, $label);
   
-  my $host_acl_name = exists($hosts->{$label}) ? squid_acl_name($label) : '';
+  my $host_acl_name = (exists($hosts->{$label}) or exists($ranges->{$label})) ? squid_acl_name($label) : '';
   
   for my $rule_type (qw/url url_path file_extentions/)
   {

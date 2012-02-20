@@ -13,6 +13,8 @@ do '/etc/configuration-generator/shorewall.conf'; our ($templates, $hosts_config
 $hosts_config = apply_template($hosts_config, $templates);
 $ranges_config = apply_template($ranges_config, $templates);
 
+my $services = {};
+
 sub shorewall_generate_params
 {
   my $fh;
@@ -44,15 +46,30 @@ sub shorewall_generate_params
 
 # --- rules ---
 
-sub build_host_services_rules
+sub build_host_script_rules_rules
 {
   my ($fh, $host_name, $variable_name) = @_[0..2];
   return unless exists $hosts_config->{$host_name}{'script-rules'};
-  foreach my $service (sort @{$hosts_config->{$host_name}{'script-rules'}})
+  foreach my $script_rule (sort @{$hosts_config->{$host_name}{'script-rules'}})
   {
-    my $cmd = sprintf("/usr/local/share/configuration-generator/shorewall/services/%s \\\$%s_HOST '%s'\n", $service, $variable_name, $network->{'external_ip'});
-    put_command_result_to_file($fh, $service, $cmd);
-    #print { $fh } sprintf("SHELL /usr/local/share/configuration-generator/shorewall/services/%s \\\$%s_HOST \\\$external_ip4_ADDR\n", $service, $variable_name);
+    my $cmd = sprintf("/usr/local/share/configuration-generator/shorewall/services/%s \\\$%s_HOST '%s'\n", $script_rule, $variable_name, $network->{'external_ip'});
+    put_command_result_to_file($fh, sprintf("### script-rule %s ###", $script_rule), $cmd);
+  }
+}
+
+sub build_host_services_rules
+{
+  my ($fh, $host_name, $variable_name) = @_[0..2];
+  return unless exists $hosts_config->{$host_name}{'services'};
+  for my $service (sort @{$hosts_config->{$host_name}{'services'}})
+  {
+    for my $ptype (sort keys %{$services->{$service}})
+    {
+      for my $port (sort @{$services->{$service}{$ptype}})
+      {
+        print { $fh } sprintf("ACCEPT locl:\$%s_HOST inet %s %s	### service %s ###\n", $variable_name, $ptype, $port, $service);
+      }
+    }
   }
 }
 
@@ -60,15 +77,15 @@ sub build_host_ports_rules
 {
   my ($fh, $host_name, $variable_name) = @_[0..2];
   return unless exists $hosts_config->{$host_name}{'ports'};
-  foreach my $ptype (sort keys %{$hosts_config->{$host_name}{'ports'}})
+  for my $ptype (sort keys %{$hosts_config->{$host_name}{'ports'}})
   {
-    foreach my $port (sort @{$hosts_config->{$host_name}{'ports'}{$ptype}})
+    for my $port (sort @{$hosts_config->{$host_name}{'ports'}{$ptype}})
     {
       my @pt;
       if ( $ptype eq 'both' ) { @pt = ('tcp', 'udp' ); } else { @pt = ($ptype); }
-      foreach my $ptp (@pt)
+      for my $ptp (@pt)
       {
-        print { $fh } sprintf("ACCEPT locl:\$%s_HOST inet %s %s\n", $variable_name, $ptp, $port);
+        print { $fh } sprintf("ACCEPT locl:\$%s_HOST inet %s %s	### port rule  ###\n", $variable_name, $ptp, $port);
       }
     }
   }
@@ -86,8 +103,8 @@ sub build_host_dnat_rules
       if ( $ptype eq 'both' ) { @pt = ('tcp', 'udp' ); } else { @pt = ($ptype); }
       foreach my $ptp (@pt)
       {
-        print { $fh } sprintf("DNAT locl locl:\$%s_HOST %s %s - \$external_ip4_ADDR\n", $variable_name, $ptp, $port);
-        print { $fh } sprintf("DNAT inet locl:\$%s_HOST %s %s\n", $variable_name, $ptp, $port);
+        print { $fh } sprintf("DNAT locl locl:\$%s_HOST %s %s - \$external_ip4_ADDR	### dnat rule local ###\n", $variable_name, $ptp, $port);
+        print { $fh } sprintf("DNAT inet locl:\$%s_HOST %s %s	### dnat rule remote ###\n", $variable_name, $ptp, $port);
       }
     }
   }
@@ -97,12 +114,28 @@ sub build_host_dnat_rules
 sub build_range_services_rules
 {
   my ($fh, $range_name, $variable_name) = @_[0..2];
-  return unless exists $ranges_config->{$range_name}{'script-rules'};
-  foreach my $service (sort @{$ranges_config->{$range_name}{'script-rules'}})
+  return unless exists $ranges_config->{$range_name}{'services'};
+  for my $service (sort @{$ranges_config->{$range_name}{'services'}})
   {
-    my $cmd = sprintf("/usr/local/share/configuration-generator/shorewall/services/%s '\$%s_RANGE' '%s'\n", $service, $variable_name, $network->{'external_ip'});
-    put_command_result_to_file($fh, $service, $cmd);
-    #print { $fh } sprintf("SHELL /usr/local/share/configuration-generator/shorewall/services/%s \\\$%s_RANGE \\\$external_ip4_ADDR\n", $service, $variable_name);
+    for my $ptype (sort keys %{$services->{$service}})
+    {
+      for my $port (sort @{$services->{$service}{$ptype}})
+      {
+        print { $fh } sprintf("ACCEPT locl:\$%s_HOST inet %s %s	### service %s ###\n", $variable_name, $ptype, $port, $service);
+      }
+    }
+  }
+}
+
+
+sub build_range_script_rules_rules
+{
+  my ($fh, $range_name, $variable_name) = @_[0..2];
+  return unless exists $ranges_config->{$range_name}{'script-rules'};
+  foreach my $script_rule (sort @{$ranges_config->{$range_name}{'script-rules'}})
+  {
+    my $cmd = sprintf("/usr/local/share/configuration-generator/shorewall/services/%s '\$%s_RANGE' '%s'\n", $script_rule, $variable_name, $network->{'external_ip'});
+    put_command_result_to_file($fh, sprintf("### script-rule %s ###", $script_rule), $cmd);
   }
 }
 
@@ -118,7 +151,7 @@ sub build_range_ports_rules
       if ( $ptype eq 'both' ) { @pt = ('tcp', 'udp' ); } else { @pt = ($ptype); }
       foreach my $ptp (@pt)
       {
-        print { $fh } sprintf("ACCEPT locl:\$%s_RANGE inet %s %s\n", $variable_name, $ptp, $port);
+        print { $fh } sprintf("ACCEPT locl:\$%s_RANGE inet %s %s	### port rule ###\n", $variable_name, $ptp, $port);
       }
     }
   }
@@ -136,9 +169,10 @@ sub shorewall_generate_rules
     {
 	put_label_to_file($fh, $host_name);
 	my $variable_name = str_to_bash_variable_name($host_name);
-	build_host_services_rules($fh, $host_name, $variable_name);
-	build_host_ports_rules   ($fh, $host_name, $variable_name);
-	build_host_dnat_rules    ($fh, $host_name, $variable_name);
+	build_host_script_rules_rules($fh, $host_name, $variable_name);
+	build_host_services_rules    ($fh, $host_name, $variable_name);
+	build_host_ports_rules       ($fh, $host_name, $variable_name);
+	build_host_dnat_rules        ($fh, $host_name, $variable_name);
     }
   }
   put_label_to_file($fh, 'Ranges');
@@ -146,8 +180,9 @@ sub shorewall_generate_rules
   {
     put_label_to_file($fh, $range_name);
     my $variable_name = str_to_bash_variable_name($range_name);
-    build_range_services_rules($fh, $range_name, $variable_name);
-    build_range_ports_rules   ($fh, $range_name, $variable_name);
+    build_range_script_rules_rules($fh, $range_name, $variable_name);
+    build_range_services_rules    ($fh, $range_name, $variable_name);
+    build_range_ports_rules       ($fh, $range_name, $variable_name);
   }
   close($fh);
 }
@@ -200,13 +235,33 @@ sub append_unconfigured_hosts
   }
 }
 
+sub load_services
+{
+  for my $line (`cat /etc/services | grep -v '#' | egrep '(tcp|udp)' | sort -u | awk '{ print \$1 "/" \$2}'`)
+  {
+    if($line =~ /.*\/.*\/.*/)
+    {
+      chomp $line;
+      my ($service, $port, $proto) = split(/\//, $line);
+      if (not exists($services->{$service}{$proto}))
+      {
+        $services->{$service}{$proto} = [];
+      }
+      push (@{$services->{$service}{$proto}}, $port);
+    }
+  }
+}
+
 sub shorewall_generate
 {
+  load_services();
   #use Data::Dumper;
+  #print Dumper($services);
   #print Dumper($accounting_interfaces);
   #print Dumper($templates);
   #print Dumper($output_to);
   #print Dumper($hosts_config);
+  #exit;
   append_unconfigured_hosts();
   shorewall_generate_params();
   shorewall_generate_rules();

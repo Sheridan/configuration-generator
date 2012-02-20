@@ -112,8 +112,9 @@ sub make_zones_descrition
     my ($zf, $rzf, $arpa_addr) = @_[0..2];
     my $fh;
     open($fh, '>', sprintf("%s/%s.zones.include", $output_to->{'zones'}, $network->{'domain'}));
-    print  {$fh} sprintf("zone \"%s\" in { type master; file \"%s\"; notify yes; };\n", $network->{'domain'}, $zf);
-    print  {$fh} sprintf("zone \"%s.in-addr.arpa\" in { type master; file \"%s\"; notify yes; };\n", $arpa_addr, $rzf);
+    my $options = join("\n\t", @{$config->{'zones-options'}});
+    print  {$fh} sprintf("zone \"%s\" in {\n\ttype master;\n\tfile \"%s\";\n\t%s\n};\n", $network->{'domain'}, $zf, $options);
+    print  {$fh} sprintf("zone \"%s.in-addr.arpa\" in {\n\ttype master;\n\tfile \"%s\";\n\t%s\n};\n", $arpa_addr, $rzf, $options);
     close($fh);
 }
 

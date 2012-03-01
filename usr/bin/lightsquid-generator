@@ -1,0 +1,70 @@
+#!/usr/bin/perl
+use lib "/usr/local/lib/configuration-generator";
+
+use strict;
+use warnings;
+use utf8;
+use ConfGenCommon;
+
+
+do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges);
+do '/etc/configuration-generator/lightsquid.conf'; our ($output_to);
+
+sub generate
+{
+  #use Data::Dumper;
+  #print Dumper($config);
+  my $iranges = {};
+  my $range_num = 1;
+  for my $range_name (sort keys %{$ranges})
+  {
+    $iranges->{$range_name}{'num'} = sprintf("%02d", $range_num);
+    for my $range (@{$ranges->{$range_name}})
+    {
+       push(@{$iranges->{$range_name}{'ips'}}, @{range_to_ip_list(@{$range})});
+    }
+    $range_num++;
+  }
+  #print Dumper($iranges);
+  my ($ip2name_fh, $groups_fh);
+  open($ip2name_fh, '>', $output_to->{'ip2name'});
+  open($groups_fh, '>', $output_to->{'groups'});
+  
+  print { $ip2name_fh } "sub StartIp2Name() {}\nsub StopIp2Name() {}\nmy \$data = {\n";
+  
+  for my $host (sort keys %{$hosts})
+  {
+    my $userid = scalar(@{$hosts->{$host}{'cnames'}}) > 0 ? 
+                             sprintf("%s_%s", $host, join('_', @{$hosts->{$host}{'cnames'}})) : 
+                             $host;
+    print { $ip2name_fh } sprintf ("\t'%s' => '%s',\n", 
+                           $hosts->{$host}{'ip'}, 
+                           $userid);
+    for my $range_name (sort keys %{$iranges})
+    {
+      for (my $i = 0; $i < scalar(@{$iranges->{$range_name}{'ips'}}); $i++)
+      {
+        if (defined($iranges->{$range_name}{'ips'}[$i]) and $hosts->{$host}{'ip'} eq $iranges->{$range_name}{'ips'}[$i])
+        {
+           print { $groups_fh } sprintf ("%s %s %s\n", $userid, $iranges->{$range_name}{'num'}, $range_name);
+           undef ($iranges->{$range_name}{'ips'}[$i]);
+        }
+      }
+    }
+  }
+  
+  for my $range_name (sort keys %{$iranges})
+  {
+    for my $ip (@{$iranges->{$range_name}{'ips'}})
+    {
+      print { $groups_fh } sprintf ("%s %s %s\n", $ip, $iranges->{$range_name}{'num'}, $range_name) if defined $ip;
+    }
+  }
+  
+  print { $ip2name_fh } "};\nsub Ip2Name(\$\$\$)\n{\n\tmy \$ip = shift;\n\treturn \$data->{\$ip} if exists(\$data->{\$ip});\n\treturn \$ip;\n}";
+  
+  close($ip2name_fh);
+  close($groups_fh);
+}
+
+generate();

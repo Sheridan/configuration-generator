@@ -4,3 +4,4 @@ shorewall IPv4
 squid
 dhcpd
 named
+lightsquid

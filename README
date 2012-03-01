@@ -1,7 +1,15 @@
 configuration-generator
 =======================
 shorewall IPv4
+
 squid
+
 dhcpd
+
 named
+
 lightsquid
+Need change lightparcer.pl, tools/SiteAggregator/*.pl
+1. To begin of file: require "/usr/lib/configuration-generator/LightsquidUrlAggregator.pl";
+2.1 find $url=$Lurl; ad remove =~ lines below
+2.2 replace $url=$Lurl; to $url=url_aggregate($Lurl);

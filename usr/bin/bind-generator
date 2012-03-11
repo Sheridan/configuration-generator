@@ -7,7 +7,7 @@ use utf8;
 use ConfGenCommon;
 
 do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges, $network, $external_interface);
-do '/etc/configuration-generator/bind.conf';  our ($config, $output_to);
+do '/etc/configuration-generator/bind.conf';  our ($config, $output_to, $guests);
 
 # -----------------------------  zone ----------------------------------
 sub make_zone
@@ -116,6 +116,24 @@ sub make_zones_descrition
     print  {$fh} sprintf("zone \"%s\" in {\n\ttype master;\n\tfile \"%s\";\n\t%s\n};\n", $network->{'domain'}, $zf, $options);
     print  {$fh} sprintf("zone \"%s.in-addr.arpa\" in {\n\ttype master;\n\tfile \"%s\";\n\t%s\n};\n", $arpa_addr, $rzf, $options);
     close($fh);
+}
+
+# ----------------------------- guests ----------------------------------
+
+sub make_guests
+{
+  my $fh = $_[0];
+  for my $guests_range_name (@{$guests->{'ranges'}})
+  {
+    my $iplist = range_to_ip_list(@{$ranges->{$guests_range_name}});
+    my $count = scalar(@{$iplist})+1;
+    my $i = 0;
+    for my $ip (@{$iplist})
+    {
+      print { $fh } sprintf("%s-%0${count}s A %s\n", $guests_range_name, $i, $ip);
+      $i++;
+    }
+  }
 }
 
 sub bind_generate

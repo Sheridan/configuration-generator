@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+#. /etc/colors
+
+use strict;
+use File::Tail;
+use Term::ANSIColor;
+
+my $colors = 
+{
+  'TCP_HIT'                 => color('green'),
+  'TCP_MEM_HIT'             => color('green on_yellow'),
+  'TCP_IMS_HIT'             => color('green on_cyan'),
+  'TCP_MISS'                => color('yellow'),
+  'TCP_CLIENT_REFRESH_MISS' => color('yellow on_green'),
+  'TCP_REFRESH_UNMODIFIED'  => color('cyan'),
+  'TCP_DENIED'              => color('blink red')
+};
+
+my $default_color = color('reset');
+
+my $file=File::Tail->new(name=>"/data/squid/log/access.log", interval=>1, maxbuf=>32);
+my $line;
+while (defined($line=$file->read)) 
+{
+  chomp $line;
+  #printf ("%s\n",$line);
+  $line =~ s/^\d+\.\d+/localtime $&/e;
+  for my $type (keys %{$colors})
+  {
+    $line =~ s/$type/$colors->{$type}${type}${default_color}/;
+  }
+  printf ("%s\n",$line) if ($line ne '');
+}
+

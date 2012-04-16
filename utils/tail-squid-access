@@ -9,10 +9,11 @@ my $colors =
 {
   'TCP_HIT'                 => color('green'),
   'TCP_MEM_HIT'             => color('green on_yellow'),
-  'TCP_IMS_HIT'             => color('green on_cyan'),
+  'TCP_IMS_HIT'             => color('green on_blue'),
   'TCP_MISS'                => color('yellow'),
   'TCP_CLIENT_REFRESH_MISS' => color('yellow on_green'),
   'TCP_REFRESH_UNMODIFIED'  => color('cyan'),
+  'TCP_REFRESH_MODIFIED'    => color('cyan on_blue'),
   'TCP_DENIED'              => color('blink red')
 };
 

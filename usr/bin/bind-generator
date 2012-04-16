@@ -17,11 +17,11 @@ sub make_zone
     print {$fh} sprintf("\$ORIGIN %s.\n", $network->{'domain'});
     print {$fh} sprintf("\$TTL %d\n", $config->{'timers'}{'ttl'});
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    print {$fh} sprintf("@ IN SOA %s.%s. %s.%s. (\n\t%02d%d%d%d%d ; serial\n\t%s ; refresh\n\t%d ; rertry\n\t%d ; expire\n\t%d ; minimum\n)\n", 
+    print {$fh} sprintf("@ IN SOA %s.%s. %s.%s. (\n\t%02d%d%d%d ; serial\n\t%s ; refresh\n\t%d ; rertry\n\t%d ; expire\n\t%d ; minimum\n)\n", 
 			#$network->{'domain'},
 			$config->{'in-soa'}{0}, $network->{'domain'},
 			$config->{'in-soa'}{1}, $network->{'domain'},
-			$year%100, $yday, $hour, $min, $sec,
+			$year%100, $yday, $hour, $min,
 			$config->{'timers'}{'refresh'},
 			$config->{'timers'}{'retry'},
 			$config->{'timers'}{'expire'},

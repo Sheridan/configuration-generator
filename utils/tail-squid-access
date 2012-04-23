@@ -1,9 +1,21 @@
 #!/usr/bin/perl
 #. /etc/colors
 
+use lib "/usr/local/lib/configuration-generator";
+
+use utf8;
+
+
+
 use strict;
 use File::Tail;
 use Term::ANSIColor;
+use ConfGenCommon;
+#use Data::Dumper;
+
+do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges);
+do '/etc/configuration-generator/lightsquid.conf'; our ($output_to);
+
 
 my $colors = 
 {
@@ -17,19 +29,58 @@ my $colors =
   'TCP_DENIED'              => color('blink red')
 };
 
+my $group_colors = 
+{
+  'users'   => color('green'),
+  'servers' => color('yellow'),
+  'devices' => color('red'),
+  'guests'  => color('cyan')
+};
+
 my $default_color = color('reset');
+
+my $ip_to_name = {};
+for my $range_name (sort keys %{$ranges})
+{
+  for my $range (@{$ranges->{$range_name}})
+  {
+    for my $r_ip (@{range_to_ip_list(@{$range})})
+    {
+      $ip_to_name->{$r_ip}{'group'} = $group_colors->{$range_name} . $range_name . $default_color;
+      $ip_to_name->{$r_ip}{'host'} = color('red').'unconfigured'.color('reset');
+    }
+  }
+}
+
+for my $host (sort keys %{$hosts})
+{
+  $ip_to_name->{$hosts->{$host}{'ip'}}{'host'} = scalar(@{$hosts->{$host}{'cnames'}}) > 0 ?
+                                                        sprintf("%s_%s", $host, join('_', @{$hosts->{$host}{'cnames'}})) :
+                                                        $host;
+}
 
 my $file=File::Tail->new(name=>"/data/squid/log/access.log", interval=>1, maxbuf=>32);
 my $line;
 while (defined($line=$file->read)) 
 {
   chomp $line;
-  #printf ("%s\n",$line);
-  $line =~ s/^\d+\.\d+/localtime $&/e;
-  for my $type (keys %{$colors})
+  if ($line ne '')
   {
-    $line =~ s/$type/$colors->{$type}${type}${default_color}/;
+    #print $line."\n";
+    my @line_data = split(/\s+/, $line);
+    $line_data[0] =~ s/^\d+\.\d+/localtime $&/e;
+    #printf ("%s\n",$line);
+    for my $type (keys %{$colors})
+    {
+      $line_data[3] =~ s/$type/$colors->{$type}${type}${default_color}/;
+    }
+    $line_data[2] = exists($ip_to_name->{$line_data[2]}) ?
+                      sprintf("(%s->%s) %s", $ip_to_name->{$line_data[2]}{'group'}, $ip_to_name->{$line_data[2]}{'host'}, $line_data[2]) :
+                      color('red').'unconfigured'.color('reset'). " " . $line_data[2];
+    print join(' ', @line_data)."\n";
+    #print Dumper(@line_data);
+    #print "\n\n\n";
   }
-  printf ("%s\n",$line) if ($line ne '');
+  #printf ("%s\n",$line) if ($line ne '');
 }
 

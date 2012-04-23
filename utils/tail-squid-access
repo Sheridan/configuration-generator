@@ -5,8 +5,6 @@ use lib "/usr/local/lib/configuration-generator";
 
 use utf8;
 
-
-
 use strict;
 use File::Tail;
 use Term::ANSIColor;
@@ -14,30 +12,7 @@ use ConfGenCommon;
 #use Data::Dumper;
 
 do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges);
-do '/etc/configuration-generator/lightsquid.conf'; our ($output_to);
-
-
-my $colors = 
-{
-  'TCP_HIT'                 => color('green'),
-  'TCP_MEM_HIT'             => color('green on_yellow'),
-  'TCP_IMS_HIT'             => color('green on_blue'),
-  'TCP_MISS'                => color('yellow'),
-  'TCP_CLIENT_REFRESH_MISS' => color('yellow on_green'),
-  'TCP_REFRESH_UNMODIFIED'  => color('cyan'),
-  'TCP_REFRESH_MODIFIED'    => color('cyan on_blue'),
-  'TCP_DENIED'              => color('blink red')
-};
-
-my $group_colors = 
-{
-  'users'   => color('green'),
-  'servers' => color('yellow'),
-  'devices' => color('red'),
-  'guests'  => color('cyan')
-};
-
-my $default_color = color('reset');
+do '/etc/configuration-generator/colors.conf'; our ($reset_color, $squid_colors, $ranges_colors);
 
 my $ip_to_name = {};
 for my $range_name (sort keys %{$ranges})
@@ -46,7 +21,7 @@ for my $range_name (sort keys %{$ranges})
   {
     for my $r_ip (@{range_to_ip_list(@{$range})})
     {
-      $ip_to_name->{$r_ip}{'group'} = $group_colors->{$range_name} . $range_name . $default_color;
+      $ip_to_name->{$r_ip}{'group'} = $ranges_colors->{$range_name} . $range_name . $reset_color;
       $ip_to_name->{$r_ip}{'host'} = color('red').'unconfigured'.color('reset');
     }
   }
@@ -70,13 +45,13 @@ while (defined($line=$file->read))
     my @line_data = split(/\s+/, $line);
     $line_data[0] =~ s/^\d+\.\d+/localtime $&/e;
     #printf ("%s\n",$line);
-    for my $type (keys %{$colors})
+    for my $type (keys %{$squid_colors->{'status'}})
     {
-      $line_data[3] =~ s/$type/$colors->{$type}${type}${default_color}/;
+      $line_data[3] =~ s/$type/$squid_colors->{'status'}{$type}${type}${reset_color}/;
     }
     $line_data[2] = exists($ip_to_name->{$line_data[2]}) ?
                       sprintf("(%s->%s) %s", $ip_to_name->{$line_data[2]}{'group'}, $ip_to_name->{$line_data[2]}{'host'}, $line_data[2]) :
-                      color('red').'unconfigured'.color('reset'). " " . $line_data[2];
+                      $squid_colors->{'ip-not-in-hosts'}.'unconfigured'.color('reset'). " " . $line_data[2];
     print join(' ', @line_data)."\n";
     #print Dumper(@line_data);
     #print "\n\n\n";

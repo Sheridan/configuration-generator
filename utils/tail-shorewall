@@ -1,0 +1,113 @@
+#!/usr/bin/perl
+#. /etc/colors
+
+use lib "/usr/local/lib/configuration-generator";
+
+use utf8;
+
+use strict;
+use File::Tail;
+use Term::ANSIColor;
+use ConfGenCommon;
+use Socket;
+#use Data::Dumper;
+
+do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges);
+do '/etc/configuration-generator/colors.conf'; our ($reset_color, $shorewall_colors, $ranges_colors);
+
+sub parse_logline
+{
+  my @in = @_;
+  my $result = {};
+  for my $part (@in)
+  {
+    if (index($part, '=' != -1))
+    {
+      my @val = split(/=/, $part);
+      $result->{$val[0]} = $val[1];
+    }
+  }
+  return $result;
+}
+
+my $ns_cache = {};
+sub resolve_ip
+{
+  my $ip = $_[0];
+  if (not exists($ns_cache->{$ip}) or $ns_cache->{$ip} eq '-=???=-' )
+  {
+    $ns_cache->{$ip} = scalar gethostbyaddr(inet_aton($ip), AF_INET);
+    $ns_cache->{$ip} = $ns_cache->{$ip} eq '' ? '-=???=-' : $ns_cache->{$ip};
+  }
+  return $ns_cache->{$ip};
+}
+
+my $ip_to_name = {};
+for my $range_name (sort keys %{$ranges})
+{
+  for my $range (@{$ranges->{$range_name}})
+  {
+    for my $r_ip (@{range_to_ip_list(@{$range})})
+    {
+      $ip_to_name->{$r_ip}{'group'} = $ranges_colors->{$range_name} . $range_name . $reset_color;
+      $ip_to_name->{$r_ip}{'host'} = color('red').'unconfigured'.color('reset');
+    }
+  }
+}
+
+for my $host (sort keys %{$hosts})
+{
+  $ip_to_name->{$hosts->{$host}{'ip'}}{'host'} = scalar(@{$hosts->{$host}{'cnames'}}) > 0 ?
+                                                        sprintf("%s_%s", $host, join('_', @{$hosts->{$host}{'cnames'}})) :
+                                                        $host;
+}
+
+my $file=File::Tail->new(name=>"/var/log/messages", interval=>1, maxbuf=>32);
+my $line;
+while (defined($line=$file->read)) 
+{
+  chomp $line;
+  if ($line ne '')
+  {
+    #print $line."\n";
+    my @line_data = split(/\s+/, $line);
+    my @first = split(/:/, $line_data[6]);
+    if ($first[0] eq 'shw_4')
+    {
+      my $names = '';
+      my $parsed = parse_logline($first[3], @line_data[7..scalar(@line_data)-1]);
+      my @direction = split(/2/, $first[1]);
+      my $resolution = $first[2];
+      for my $type (keys %{$shorewall_colors->{'status'}})    { $resolution =~ s/$type/$shorewall_colors->{'status'}{$type}${type}${reset_color}/; }
+      if ($direction[0] eq 'locl')
+      {
+        $names = exists($ip_to_name->{$parsed->{'SRC'}}) ?
+               sprintf("%s::%s", $ip_to_name->{$parsed->{'SRC'}}{'group'}, $ip_to_name->{$parsed->{'SRC'}}{'host'}) :
+               $shorewall_colors->{'ip-not-in-hosts'}.'unconfigured'.color('reset');
+        if ($direction[1] eq 'inet')
+        {
+          $names .= '->'.$shorewall_colors->{'dn'}.resolve_ip($parsed->{'DST'}).color('reset');
+        }
+      }
+      elsif ($direction[0] eq 'inet')
+      {
+        $names = $shorewall_colors->{'dn'}.resolve_ip($parsed->{'SRC'}).color('reset');
+      }
+      for my $type (keys %{$shorewall_colors->{'direction'}}) 
+      { 
+        $direction[0] =~ s/$type/$shorewall_colors->{'direction'}{$type}${type}${reset_color}/; 
+        $direction[1] =~ s/$type/$shorewall_colors->{'direction'}{$type}${type}${reset_color}/; 
+      }
+      
+      print sprintf("[%s] %s %s->%s, %s:%s -> %s:%s %s\n", 
+                   join(' ', @line_data[0..2]),
+                   $resolution,
+                   $direction[0], $direction[1],
+                   $parsed->{'SRC'}, $parsed->{'SPT'},
+                   $parsed->{'DST'}, $parsed->{'DPT'},
+                   $names
+                   );
+    }
+  }
+}
+

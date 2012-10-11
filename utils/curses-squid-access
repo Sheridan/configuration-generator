@@ -1,0 +1,114 @@
+#!/usr/bin/perl
+#. /etc/colors
+
+use lib "/usr/local/lib/configuration-generator";
+
+use utf8;
+
+use strict;
+use File::Tail;
+use Term::ANSIColor;
+use ConfGenCommon;
+
+use Data::Dumper;
+
+use Curses::UI;
+
+my $cui = new Curses::UI( -color_support => 1, -compat => 1 );
+my @menu =
+(
+  { 
+    -label => 'File', 
+    -submenu => 
+    [
+      { -label => 'Exit      ^Q', -value => \&exit_dialog  }
+    ]
+  },
+);
+
+sub exit_dialog()
+{
+  my $return = $cui->dialog
+  (
+    -message   => "Do you really want to quit?",
+    -title     => "Are you sure???", 
+    -buttons   => ['yes', 'no'],
+  );
+  exit(0) if $return;
+}
+
+my $menu = $cui->add(
+  'menu','Menubar', 
+  -menu => \@menu,
+  -fg  => "blue",
+);
+
+my $win = $cui->add(
+  'win', 'Window',
+  -border => 1,
+  -y    => 1,
+  -bfg  => 'red',
+);
+
+$cui->set_binding(sub {$menu->focus()}, "\cX");
+$cui->set_binding( \&exit_dialog , "\cQ");
+
+my $ranges_listbox = $win->add('rangesListBox', 'Listbox', -x => 0, -y => 0, -width => 30, -height => 5);
+my $users_listbox  = $win->add('usersListBox', 'Listbox', -x => $ranges_listbox->width(), -y => 0, -width => -1, -height => $ranges_listbox->height());
+
+my (@ranges_values, @users_values) = ((),());
+
+$ranges_listbox->values();
+$ranges_listbox->focus();
+$cui->mainloop();
+
+__END__
+
+do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges);
+do '/etc/configuration-generator/colors.conf'; our ($reset_color, $squid_colors, $ranges_colors);
+
+my $ip_to_name = {};
+for my $range_name (sort keys %{$ranges})
+{
+  for my $range (@{$ranges->{$range_name}})
+  {
+    for my $r_ip (@{range_to_ip_list(@{$range})})
+    {
+      $ip_to_name->{$r_ip}{'group'} = $ranges_colors->{$range_name} . $range_name . $reset_color;
+      $ip_to_name->{$r_ip}{'host'} = color('red').'unconfigured'.color('reset');
+    }
+  }
+}
+
+for my $host (sort keys %{$hosts})
+{
+  $ip_to_name->{$hosts->{$host}{'ip'}}{'host'} = scalar(@{$hosts->{$host}{'cnames'}}) > 0 ?
+                                                        sprintf("%s_%s", $host, join('_', @{$hosts->{$host}{'cnames'}})) :
+                                                        $host;
+}
+
+my $file=File::Tail->new(name=>"/data/squid/log/access.log", interval=>1, maxbuf=>32);
+my $line;
+while (defined($line=$file->read)) 
+{
+  chomp $line;
+  if ($line ne '')
+  {
+    #print $line."\n";
+    my @line_data = split(/\s+/, $line);
+    $line_data[0] =~ s/^\d+\.\d+/localtime $&/e;
+    #printf ("%s\n",$line);
+    for my $type (keys %{$squid_colors->{'status'}})
+    {
+      $line_data[3] =~ s/$type/$squid_colors->{'status'}{$type}${type}${reset_color}/;
+    }
+    $line_data[2] = exists($ip_to_name->{$line_data[2]}) ?
+                      sprintf("(%s->%s) %s", $ip_to_name->{$line_data[2]}{'group'}, $ip_to_name->{$line_data[2]}{'host'}, $line_data[2]) :
+                      $squid_colors->{'ip-not-in-hosts'}.'unconfigured'.color('reset'). " " . $line_data[2];
+    print join(' ', @line_data)."\n";
+    #print Dumper(@line_data);
+    #print "\n\n\n";
+  }
+  #printf ("%s\n",$line) if ($line ne '');
+}
+

@@ -12,16 +12,15 @@ do '/etc/configuration-generator/bind.conf';  our ($config, $output_to, $guests)
 # -----------------------------  zone ----------------------------------
 sub make_zone
 {
-    my ($fh) = $_[0];
+    my ($fh, $serial) = @_[0..1];
     #print {$fh} "\$ORIGIN .\n";
     print {$fh} sprintf("\$ORIGIN %s.\n", $network->{'domain'});
     print {$fh} sprintf("\$TTL %d\n", $config->{'timers'}{'ttl'});
-    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    print {$fh} sprintf("@ IN SOA %s.%s. %s.%s. (\n\t%02d%d%d%d ; serial\n\t%s ; refresh\n\t%d ; rertry\n\t%d ; expire\n\t%d ; minimum\n)\n", 
+    print {$fh} sprintf("@ IN SOA %s.%s. %s.%s. (\n\t%d ; serial\n\t%s ; refresh\n\t%d ; rertry\n\t%d ; expire\n\t%d ; minimum\n)\n", 
 			#$network->{'domain'},
 			$config->{'in-soa'}{0}, $network->{'domain'},
 			$config->{'in-soa'}{1}, $network->{'domain'},
-			$year%100, $yday, $hour, $min,
+			$serial,
 			$config->{'timers'}{'refresh'},
 			$config->{'timers'}{'retry'},
 			$config->{'timers'}{'expire'},
@@ -65,16 +64,15 @@ sub make_zone_hosts
 
 sub make_reverse_zone
 {
-    my ($fh, $arpa_addr) = @_[0..1];
+    my ($fh, $arpa_addr, $serial) = @_[0..2];
     
     print {$fh} "\$ORIGIN .\n";
     print {$fh} sprintf("\$TTL %d\n", $config->{'timers'}{'ttl'});
-    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    print {$fh} sprintf("%s.in-addr.arpa IN SOA %s.%s. %s.%s. (\n\t%02d%d%d%d%d ; serial\n\t%s ; refresh\n\t%d ; rertry\n\t%d ; expire\n\t%d ; minimum\n)\n", 
+    print {$fh} sprintf("%s.in-addr.arpa IN SOA %s.%s. %s.%s. (\n\t%d ; serial\n\t%s ; refresh\n\t%d ; rertry\n\t%d ; expire\n\t%d ; minimum\n)\n", 
 			$arpa_addr,
 			$config->{'in-soa'}{0}, $network->{'domain'},
 			$config->{'in-soa'}{1}, $network->{'domain'},
-			$year%100, $yday, $hour, $min, $sec,
+			$serial,
 			$config->{'timers'}{'refresh'},
 			$config->{'timers'}{'retry'},
 			$config->{'timers'}{'expire'},
@@ -136,14 +134,26 @@ sub make_guests
   }
 }
 
+sub make_zone_serial
+{
+    my $zf = $_[0];
+    if(-e $zf)
+    {
+	my $serial =  `cat $zf | grep '; serial' | sed -e 's/[^0-9]//ig'`; chomp $serial;
+	return $serial+1;
+    }
+    return 1;
+}
+
 sub bind_generate
 {
   #use Data::Dumper;
   #print Dumper($config);
     my $fh;
     my $zf =  sprintf("%s/%s.zone", $output_to->{'zones'}, $network->{'domain'});
+    my $serial = make_zone_serial($zf);
     open($fh, '>', $zf);
-    make_zone($fh);
+    make_zone($fh, $serial);
     make_zone_hosts($fh);
     close($fh);
     
@@ -157,7 +167,7 @@ sub bind_generate
     my $arpa_addr = join('.', @arpa);
     my $rzf = sprintf("%s/%s.in-addr.arpa.zone", $output_to->{'zones'}, $arpa_addr);
     open($fh, '>', $rzf);
-    make_reverse_zone($fh, $arpa_addr);
+    make_reverse_zone($fh, $arpa_addr, $serial);
     make_reverse_zone_hosts($fh, $arpa_addr, scalar @arpa);
     close($fh);
     make_zones_descrition($zf, $rzf, $arpa_addr);

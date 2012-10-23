@@ -1,9 +1,11 @@
 #!/bin/bash
 
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
 tcp_ports="3074,1863"
 udp_ports="3074,88,1863"
 
-echo "ACCEPT locl:${CLIENT_IP} inet udp ${udp_ports}"
-echo "ACCEPT locl:${CLIENT_IP} inet tcp ${tcp_ports}"
+echo "${RULE} locl:${CLIENT_IP} inet udp ${udp_ports}"
+echo "${RULE} locl:${CLIENT_IP} inet tcp ${tcp_ports}"

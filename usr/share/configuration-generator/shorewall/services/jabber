@@ -1,6 +1,8 @@
 #!/bin/bash
 
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
-echo "JabberSecure(ACCEPT) locl:${CLIENT_IP} inet"
-echo "JabberPlain(ACCEPT)  locl:${CLIENT_IP} inet"
+echo "JabberSecure(${RULE}) locl:${CLIENT_IP} inet"
+echo "JabberPlain(${RULE})  locl:${CLIENT_IP} inet"

@@ -1,10 +1,12 @@
 #!/bin/bash
 
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
-echo "POP3(ACCEPT)    locl:${CLIENT_IP}    inet"
-echo "POP3S(ACCEPT)   locl:${CLIENT_IP}    inet"
-echo "SMTP(ACCEPT)    locl:${CLIENT_IP}    inet"
-echo "SMTPS(ACCEPT)   locl:${CLIENT_IP}    inet"
-echo "IMAP(ACCEPT)    locl:${CLIENT_IP}    inet"
-echo "IMAPS(ACCEPT)   locl:${CLIENT_IP}    inet"
+echo "POP3(${RULE})    locl:${CLIENT_IP}    inet"
+echo "POP3S(${RULE})   locl:${CLIENT_IP}    inet"
+echo "SMTP(${RULE})    locl:${CLIENT_IP}    inet"
+echo "SMTPS(${RULE})   locl:${CLIENT_IP}    inet"
+echo "IMAP(${RULE})    locl:${CLIENT_IP}    inet"
+echo "IMAPS(${RULE})   locl:${CLIENT_IP}    inet"

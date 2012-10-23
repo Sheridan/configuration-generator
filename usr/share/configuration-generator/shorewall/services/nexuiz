@@ -1,7 +1,8 @@
 #!/bin/bash
 
 CLIENT_IP=$1
-
+EXTERNAL_IP=$2
+RULE=$3
 
 address="http://dpmaster.deathmask.net/?game=nexuiz"
 ports="26000"
@@ -10,4 +11,4 @@ ports="26000"
 #  ports="${ports},${p}"
 #done
 
-echo "ACCEPT locl:${CLIENT_IP} inet udp ${ports}"
+echo "${RULE} locl:${CLIENT_IP} inet udp ${ports}"

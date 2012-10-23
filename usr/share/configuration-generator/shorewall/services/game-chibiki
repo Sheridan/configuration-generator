@@ -1,10 +1,12 @@
 #!/bin/bash
 
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
 ports="28993:29000"
 servip="217.23.141.36"
 
-echo "ACCEPT locl:${CLIENT_IP} inet:${servip} tcp ${ports}"
-echo "ACCEPT locl:${CLIENT_IP} inet:${servip} udp ${ports}"
+echo "${RULE} locl:${CLIENT_IP} inet:${servip} tcp ${ports}"
+echo "${RULE} locl:${CLIENT_IP} inet:${servip} udp ${ports}"
   

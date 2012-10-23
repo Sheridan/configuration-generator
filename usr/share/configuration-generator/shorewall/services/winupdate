@@ -1,8 +1,10 @@
 #!/bin/bash
 
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
 for t in tcp udp
 do
-    echo "ACCEPT locl:${CLIENT_IP} inet ${t} 3128"
+    echo "${RULE} locl:${CLIENT_IP} inet ${t} 3128"
 done

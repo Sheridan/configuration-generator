@@ -1,8 +1,10 @@
 #!/bin/bash
 
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
-echo "FTP(ACCEPT) locl:${CLIENT_IP} inet"
+echo "FTP(${RULE}) locl:${CLIENT_IP} inet"
 
 #FROX_IP=192.168.1.1
 #FROX_PORT=2128

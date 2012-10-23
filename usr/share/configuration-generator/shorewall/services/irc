@@ -1,5 +1,7 @@
 #!/bin/bash
 
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
-echo "ACCEPT locl:${CLIENT_IP} inet tcp 6667,6666,8001"
+echo "${RULE} locl:${CLIENT_IP} inet tcp 6667,6666,8001"

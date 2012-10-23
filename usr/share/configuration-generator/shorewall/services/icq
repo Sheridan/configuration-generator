@@ -1,5 +1,7 @@
 #!/bin/bash
 
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
-echo "ICQ(ACCEPT) locl:${CLIENT_IP} inet"
+echo "ICQ(${RULE}) locl:${CLIENT_IP} inet"

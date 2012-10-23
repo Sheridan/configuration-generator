@@ -3,12 +3,15 @@
 #SQUID_IP=192.168.1.1
 SQUID_PORT=3128
 SQUID_PORTS="80,488,591,5554,7627,8008,8080:8081,8090"
+
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
 for t in tcp udp
 do
     echo "REDIRECT locl:${CLIENT_IP} ${SQUID_PORT} ${t} ${SQUID_PORTS} - !2001:15c0:67ac::1,2001:15c0:65ff:518::2"
-    echo "ACCEPT locl:${CLIENT_IP} inet ${t} https"
+    echo "${RULE} locl:${CLIENT_IP} inet ${t} https"
 done
 
-echo "HTTP(ACCEPT) locl:${CLIENT_IP} \$FW"
+echo "HTTP(${RULE}) locl:${CLIENT_IP} \$FW"

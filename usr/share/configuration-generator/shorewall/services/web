@@ -18,3 +18,7 @@ for my $t ('tcp', 'udp')
 
 printf ("HTTP(ACCEPT) locl:%s \$FW\n", $client_ip);
 printf ("HTTPS(ACCEPT) locl:%s \$FW\n", $client_ip);
+
+# flash player
+printf ("ACCEPT locl:%s inet udp 843\n", $client_ip);
+printf ("ACCEPT locl:%s inet tcp 843\n", $client_ip);

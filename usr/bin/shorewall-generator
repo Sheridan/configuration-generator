@@ -205,6 +205,7 @@ sub shorewall_generate_accounting
     {
 	put_label_to_file($fh, $host_name);
 	my $variable_name = str_to_bash_variable_name($host_name);
+	
 	foreach my $interface (sort @{$accounting_interfaces})
 	{
 	    print { $fh } sprintf("%s-%s-in:COUNT - %s \$%s_HOST\nDONE %s-%s-in\n", $host_name, $interface, $interface, $variable_name, $host_name, $interface);

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+CLIENT_IP=$1
+
+
+
+ports="25565"
+#for p in $(cat /etc/shorewall-rules.d/services/ws_serverscache.txt | grep ":" | sed -e "s/.*:\\([0-9]*\\) .*/\\1/" | sort -u)
+#do
+#  ports="${ports},${p}"
+#done
+
+echo "ACCEPT locl:${CLIENT_IP} inet udp ${ports}"
+echo "ACCEPT locl:${CLIENT_IP} inet tcp ${ports}"

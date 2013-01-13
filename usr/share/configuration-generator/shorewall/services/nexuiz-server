@@ -1,11 +1,12 @@
 #!/bin/bash
 
 CLIENT_IP=$1
-EXT_IP=$2
+EXTERNAL_IP=$2
+RULE=$3
 
 ports="26000"
 for p in tcp udp
 do
-  echo "DNAT locl locl:${CLIENT_IP} ${p} ${ports} - ${EXT_IP}"
+  echo "DNAT locl locl:${CLIENT_IP} ${p} ${ports} - ${EXTERNAL_IP}"
   echo "DNAT inet locl:${CLIENT_IP} ${p} ${ports}"
 done

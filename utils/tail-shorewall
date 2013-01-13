@@ -10,7 +10,7 @@ use File::Tail;
 use Term::ANSIColor;
 use ConfGenCommon;
 use Socket;
-#use Data::Dumper;
+use Data::Dumper;
 
 do '/etc/configuration-generator/hosts.conf'; our ($hosts, $ranges);
 do '/etc/configuration-generator/colors.conf'; our ($reset_color, $shorewall_colors, $ranges_colors);
@@ -42,6 +42,21 @@ sub resolve_ip
   return $ns_cache->{$ip};
 }
 
+my $services = {};
+my $fh;
+open($fh, '<', '/etc/services');
+for my $line (<$fh>)
+{
+  chomp $line;
+  if ($line ne '' and substr($line, 0, 1) ne '#')
+  {
+    my @parts = split(/\s+/, $line);
+    my @port = split(/\//, $parts[1]);
+    $services->{$port[0]} = $parts[0];
+  }
+}
+close($fh);
+
 my $ip_to_name = {};
 for my $range_name (sort keys %{$ranges})
 {
@@ -50,6 +65,7 @@ for my $range_name (sort keys %{$ranges})
     for my $r_ip (@{range_to_ip_list(@{$range})})
     {
       $ip_to_name->{$r_ip}{'group'} = $ranges_colors->{$range_name} . $range_name . $reset_color;
+      $ip_to_name->{$r_ip}{'group_color'} = $ranges_colors->{$range_name};
       $ip_to_name->{$r_ip}{'host'} = color('red').'unconfigured'.color('reset');
     }
   }
@@ -79,11 +95,18 @@ while (defined($line=$file->read))
       my @direction = split(/2/, $first[1]);
       my $resolution = $first[2];
       for my $type (keys %{$shorewall_colors->{'status'}})    { $resolution =~ s/$type/$shorewall_colors->{'status'}{$type}${type}${reset_color}/; }
+      my ($srcip, $dstip) = ($parsed->{'SRC'}, $parsed->{'DST'});
       if ($direction[0] eq 'locl')
       {
-        $names = exists($ip_to_name->{$parsed->{'SRC'}}) ?
-               sprintf("%s::%s", $ip_to_name->{$parsed->{'SRC'}}{'group'}, $ip_to_name->{$parsed->{'SRC'}}{'host'}) :
-               $shorewall_colors->{'ip-not-in-hosts'}.'unconfigured'.color('reset');
+        if(exists($ip_to_name->{$parsed->{'SRC'}}))
+        {
+          $names = sprintf("%s::%s", $ip_to_name->{$parsed->{'SRC'}}{'group'}, $ip_to_name->{$parsed->{'SRC'}}{'host'});
+          $srcip = $ip_to_name->{$parsed->{'SRC'}}{'group_color'}.$srcip.color('reset');
+        }
+        else
+        {
+          $names = $shorewall_colors->{'ip-not-in-hosts'}.'unconfigured'.color('reset');
+        }
         if ($direction[1] eq 'inet')
         {
           $names .= '->'.$shorewall_colors->{'dn'}.resolve_ip($parsed->{'DST'}).color('reset');
@@ -98,13 +121,14 @@ while (defined($line=$file->read))
         $direction[0] =~ s/$type/$shorewall_colors->{'direction'}{$type}${type}${reset_color}/; 
         $direction[1] =~ s/$type/$shorewall_colors->{'direction'}{$type}${type}${reset_color}/; 
       }
-      
-      print sprintf("[%s] %s %s->%s, %s:%s -> %s:%s %s\n", 
+      my $sport = $shorewall_colors->{'ports'}.(exists($services->{$parsed->{'SPT'}}) ? sprintf("%s.%s", $parsed->{'SPT'}, $services->{$parsed->{'SPT'}}) : $parsed->{'SPT'}).color('reset');
+      my $dport = $shorewall_colors->{'ports'}.(exists($services->{$parsed->{'DPT'}}) ? sprintf("%s.%s", $parsed->{'DPT'}, $services->{$parsed->{'DPT'}}) : $parsed->{'DPT'}).color('reset');
+      print sprintf("[%s] %s %s->%s, %s:%s->%s:%s %s\n", 
                    join(' ', @line_data[0..2]),
                    $resolution,
                    $direction[0], $direction[1],
-                   $parsed->{'SRC'}, $parsed->{'SPT'},
-                   $parsed->{'DST'}, $parsed->{'DPT'},
+                   $srcip, $sport,
+                   $dstip, $dport,
                    $names
                    );
     }

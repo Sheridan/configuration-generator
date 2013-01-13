@@ -1,9 +1,11 @@
 #!/bin/bash
 
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
-echo "SVN(ACCEPT) locl:${CLIENT_IP} inet"
-echo "SVN(ACCEPT) locl:${CLIENT_IP} \$FW"
+echo "SVN(${RULE}) locl:${CLIENT_IP} inet"
+echo "SVN(${RULE}) locl:${CLIENT_IP} \$FW"
 
-echo "Git(ACCEPT) locl:${CLIENT_IP} inet"
-echo "Git(ACCEPT) locl:${CLIENT_IP} \$FW"
+echo "Git(${RULE}) locl:${CLIENT_IP} inet"
+echo "Git(${RULE}) locl:${CLIENT_IP} \$FW"

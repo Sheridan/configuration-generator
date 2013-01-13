@@ -3,18 +3,30 @@
 do '/etc/configuration-generator/hosts.conf'; our ($network);
 do '/etc/configuration-generator/squid.conf'; our ($ruleconfig);
 
-my ($client_ip, $external_ip)=@ARGV[0..1];
+my ($client_ip, $external_ip, $rule)=@ARGV[0..2];
 
 for my $t ('tcp', 'udp')
 {
-    printf ("REDIRECT locl:%s %d %s %s - !%s\n",
+    if ($rule eq 'ACCEPT')
+    {
+      printf ("REDIRECT locl:%s %d %s %s - !%s\n",
 	    $client_ip,
 	    $ruleconfig->{'squid-port'},
 	    $t,
 	    join(',', @{$ruleconfig->{'redirect-ports'}}),
 	    join(',', ($external_ip, $network->{'router'})));
-    printf ("ACCEPT locl:%s inet %s https\n", $client_ip, $t)
+     }
+     else
+     {
+        printf ("%s locl:%s inet %s %s\n", $rule, $client_ip, $t, join(',', @{$ruleconfig->{'redirect-ports'}}));
+        printf ("%s locl:%s \$FW %s %s\n", $rule, $client_ip, $t, join(',', @{$ruleconfig->{'redirect-ports'}}));
+     }
+    printf ("%s locl:%s inet %s https\n", $rule, $client_ip, $t)
 }
 
-printf ("HTTP(ACCEPT) locl:%s \$FW\n", $client_ip);
-printf ("HTTPS(ACCEPT) locl:%s \$FW\n", $client_ip);
+printf ("HTTP(%s) locl:%s \$FW\n", $rule, $client_ip);
+printf ("HTTPS(%s) locl:%s \$FW\n", $rule, $client_ip);
+
+# flash player
+printf ("%s locl:%s inet udp 843\n", $rule, $client_ip);
+printf ("%s locl:%s inet tcp 843\n", $rule, $client_ip);

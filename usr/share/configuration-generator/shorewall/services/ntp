@@ -1,6 +1,8 @@
 #!/bin/bash
 
 CLIENT_IP=$1
+EXTERNAL_IP=$2
+RULE=$3
 
-echo "NTP(ACCEPT) locl:${CLIENT_IP} \$FW"
-echo "NTP(ACCEPT) locl:${CLIENT_IP} inet"
+echo "NTP(${RULE}) locl:${CLIENT_IP} \$FW"
+echo "NTP(${RULE}) locl:${CLIENT_IP} inet"

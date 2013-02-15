@@ -85,11 +85,11 @@ sub write_rule
   
   my $host_acl_name = (exists($hosts->{$label}) or exists($ranges->{$label})) ? squid_acl_name($label) : '';
   
-  for my $rule_type (qw/url url_path file_extentions/)
+  for my $rule_type (qw/url url_path file_extentions mime/)
   {
     next if (not exists($rules->{$rule_type}));
     my $rule_keyword = $rule_type eq 'url' ? 'url_regex' : 'urlpath_regex';
-    for my $access_type (qw/allow deny no_cache/)
+    for my $access_type (qw/allow deny no_cache always_direct/)
     {
       next if (not exists($rules->{$rule_type}{$access_type}) or scalar(@{$rules->{$rule_type}{$access_type}}) == 0);
       my $name_of_rule = squid_acl_name(squid_label_to_name($label, $rule_type, $access_type));
@@ -102,9 +102,15 @@ sub write_rule
                                            $name_of_rule, 
                                            $rule_keyword,
                                            $content_file_name);
+      my $access_keyword_name = 'http_access';
+      if   ($access_type eq 'no_cache'     ) { $access_keyword_name = 'no_cache'     ; }
+      elsif($access_type eq 'always_direct') { $access_keyword_name = 'always_direct'; }
+      my $access_type_name = $access_type;
+      if   ($access_type eq 'no_cache'     ) { $access_type_name = 'deny' ; }
+      elsif($access_type eq 'always_direct') { $access_type_name = 'allow'; }
       print { $acl_fh } sprintf("%s %s %s %s\n", 
-                                           $access_type eq 'no_cache' ? 'no_cache' : 'http_access', 
-                                           $access_type eq 'no_cache' ? 'deny' : $access_type, 
+                                           $access_keyword_name, 
+                                           $access_type_name, 
                                            $host_acl_name,
                                            $name_of_rule);
       squid_build_rules_content($content_file_name, $rule_type, $rules->{$rule_type}{$access_type});

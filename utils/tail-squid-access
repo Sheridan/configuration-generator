@@ -34,7 +34,7 @@ for my $host (sort keys %{$hosts})
                                                         $host;
 }
 
-my $file=File::Tail->new(name=>"/data/squid/log/access.log", interval=>1, maxbuf=>32);
+my $file=File::Tail->new(name=>"/var/log/squid/access.log", interval=>1, maxbuf=>32);
 my $line;
 while (defined($line=$file->read)) 
 {

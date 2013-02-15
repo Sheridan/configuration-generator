@@ -112,7 +112,7 @@ sub show_range_mac
 sub services_control
 {
   my ($command) = $_[0];
-  for my $service ('dhcp', 'bind', 'squid', 'shorewall')
+  for my $service ('dhcp', 'bind', 'squid', 'lightsquid', 'shorewall')
   {
     if ($command eq 'restart')
     {

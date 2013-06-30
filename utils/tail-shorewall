@@ -87,7 +87,7 @@ while (defined($line=$file->read))
   {
     #print $line."\n";
     my @line_data = split(/\s+/, $line);
-    my @first = split(/:/, $line_data[6]);
+    my @first = split(/:/, $line_data[5]);
     if ($first[0] eq 'shw_4')
     {
       my $names = '';

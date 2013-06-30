@@ -25,7 +25,7 @@ sub make_zone
 			$config->{'timers'}{'retry'},
 			$config->{'timers'}{'expire'},
 			$config->{'timers'}{'minimum'});
-    print {$fh} sprintf("@ IN NS %s\n", $network->{'dns'});
+    print {$fh} sprintf("@ IN NS %s.%s.\n", $network->{'dns'}, $network->{'domain'});
     print {$fh} sprintf("@ A %s\n", $network->{'router'});
 }
 
@@ -77,28 +77,41 @@ sub make_reverse_zone
 			$config->{'timers'}{'retry'},
 			$config->{'timers'}{'expire'},
 			$config->{'timers'}{'minimum'});
-    print {$fh} sprintf("\tNS %s.\n", $network->{'dns'});
+    print {$fh} sprintf("\tNS %s.%s.\n", $network->{'dns'}, $network->{'domain'});
 }
-
+#use Data::Dumper;
 sub make_reverse_zone_hosts
 {
     my ($fh, $arpa_addr, $subnet_octets_count) = @_[0..2];
-    print {$fh} sprintf("\$ORIGIN %s.in-addr.arpa.\n", $arpa_addr);
+    
+    my $origins = {};
+    #$subnet_octets_count = 1;
     for my $host_name (sort keys %{$hosts})
     {
 	my @oct = split(/\./, $hosts->{$host_name}{'ip'});
-	my $oct_addr = join('.',reverse(splice(@oct,2,2)));
-	print { $fh } sprintf("%s PTR %s.%s.\n", $oct_addr, $host_name, $network->{'domain'});
+	@oct = reverse(splice(@oct,$subnet_octets_count,4-$subnet_octets_count));
+	push(@{$origins->{sprintf("%s.%s.in-addr.arpa.\n", join(".", @oct[1..scalar(@oct)-1]), $arpa_addr )}}, 
+	    {
+		'name' => $oct[0], 
+		'host' => sprintf("%s.%s.", $host_name, $network->{'domain'})
+	    });
 	for my $cname (@{$hosts->{$host_name}{'cnames'}})
 	{
-	    print { $fh } sprintf("%s PTR %s.%s.\n", $oct_addr, $cname, $network->{'domain'});
+	    push(@{$origins->{sprintf("%s.%s.in-addr.arpa.\n", join(".", @oct[1..scalar(@oct)-1]), $arpa_addr )}}, 
+	    {
+		'name' => $oct[0], 
+		'host' => sprintf("%s.%s.", $cname, $network->{'domain'})
+	    });
 	}
-	if (exists($hosts->{$host_name}{'type'}))
+	
+    }
+    #print Dumper($origins);
+    for my $origin (sort keys %{$origins})
+    {
+	print {$fh} sprintf("\n\$ORIGIN %s\n", $origin);
+	for my $origin_host (@{$origins->{$origin}})
 	{
-	  if ($hosts->{$host_name}{'type'} eq 'nameserver')
-	  {
-	    print { $fh } sprintf("%s PTR %s.%s.\n", $oct_addr, $network->{'dns'}, $network->{'domain'});
-	  }
+	    print {$fh} sprintf("%s PTR %s\n", $origin_host->{'name'}, $origin_host->{'host'});
 	}
     }
 }
@@ -168,7 +181,7 @@ sub bind_generate
     my $rzf = sprintf("%s/%s.in-addr.arpa.zone", $output_to->{'zones'}, $arpa_addr);
     open($fh, '>', $rzf);
     make_reverse_zone($fh, $arpa_addr, $serial);
-    make_reverse_zone_hosts($fh, $arpa_addr, scalar @arpa);
+    make_reverse_zone_hosts($fh, $arpa_addr, 4-scalar(@arpa));
     close($fh);
     make_zones_descrition($zf, $rzf, $arpa_addr);
 }
